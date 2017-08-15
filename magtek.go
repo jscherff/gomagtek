@@ -10,15 +10,14 @@ func main() {
 	context := gousb.NewContext()
 	defer context.Close()
 
-	// Open devices that report a Magtek vendor ID, 0x0801
+	// Open devices that report a Magtek vendor ID, 0x0801.
+	// We omit error checking on OpenDevices() because this
+	// function terminates with 'libusb: not found [code -5]'
+	// on Windows systems.
 
-	devices, err := context.OpenDevices(func(desc *gousb.DeviceDesc) bool {
+	devices, _ := context.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		return desc.Vendor == gousb.ID(MagtekVendorID)
 	})
-
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
 
 	if len(devices) == 0 {
 		log.Fatalf("No Magtek devices found")
@@ -28,7 +27,12 @@ func main() {
 
 		defer device.Close()
 
-		bufSize, err := findDeviceBufferSize(device, BufferSizes)
+		// Determine the data buffer size for vendor commands.
+		// Failure to use the correct size value for control
+		// transfers carrying vendor commands will result in
+		// a LIBUSB_ERROR_PIPE error.
+
+		bufSize, err := findDeviceBufferSize(device)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err)

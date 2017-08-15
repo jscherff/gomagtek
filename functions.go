@@ -4,6 +4,12 @@ import "github.com/google/gousb"
 import "errors"
 import "fmt"
 
+var BufferSizes = []int {24, 60}
+
+// TODO: Add more verbose error messages within functions to include the package
+//       and function name. Try to use reflection to get the name of the package
+//       and function
+
 // -----------------------------------------------------------------------------
 // Get the string representation of the vendor ID from the device descriptor.
 // -----------------------------------------------------------------------------
@@ -198,9 +204,13 @@ func getConfigDescriptor(dev *gousb.Device) (ConfigDescriptor, error) {
 	return desc, nil
 }
 
-func findDeviceBufferSize(dev *gousb.Device, sizes []int) (int, error) {
+// -----------------------------------------------------------------------------
+// Use trial and error to find the control transfer data buffer size.
+// -----------------------------------------------------------------------------
 
-	for _, size := range sizes {
+func findDeviceBufferSize(dev *gousb.Device) (int, error) {
+
+	for _, size := range BufferSizes {
 
 		data := make([]byte, size)
 		copy(data, []byte{0x00, 0x01, 0x00})

@@ -30,8 +30,6 @@ const (
 
 	BufferSizeSureswipe int = 24
 	BufferSizeDynamag int = 60
-	BufferSizeDeviceDescriptor int = 18
-	BufferSizeConfigDescriptor int = 9
 
 	CommandGetProperty uint8 = 0x00
 	CommandSetProperty uint8 = 0x01

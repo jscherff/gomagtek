@@ -1,7 +1,7 @@
 package main
 
 import "github.com/google/gousb"
-import "github.com/jscherff/gomagtek"
+import "../../gomagtek"
 import "log"
 import "fmt"
 import "os"
@@ -17,7 +17,7 @@ func main() {
 	// on Windows systems.
 
 	devices, _ := context.OpenDevices(func(desc *gousb.DeviceDesc) bool {
-		return desc.Vendor == gousb.ID(MagtekVendorID)
+		return desc.Vendor == gousb.ID(gomagtek.MagtekVendorID)
 	})
 
 	if len(devices) == 0 {
@@ -33,7 +33,7 @@ func main() {
 		// transfers carrying vendor commands will result in
 		// a LIBUSB_ERROR_PIPE error.
 
-		bufSize, err := findDeviceBufferSize(device)
+		bufSize, err := gomagtek.FindDeviceBufferSize(device)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -41,8 +41,8 @@ func main() {
 
 		// Information from the Device Descriptor
 
-		vendorID := getVendorID(device)
-		productID := getProductID(device)
+		vendorID := gomagtek.GetVendorID(device)
+		productID := gomagtek.GetProductID(device)
 
 		// Information obtained from the device using control
 		// transfer. Serial number can also be obtained using
@@ -51,13 +51,13 @@ func main() {
 		// criptor; however, this value is not refreshed until
 		// the device is power-cycled.
 
-		softwareID, _ := getDeviceSoftwareID(device, bufSize)
+		softwareID, _ := gomagtek.GetDeviceSoftwareID(device, bufSize)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := getDeviceSerialNumber(device, bufSize)
+		serialNum, err := gomagtek.GetDeviceSerialNumber(device, bufSize)
 
 		// Host name as reported by the operating system.
 
@@ -74,13 +74,13 @@ func main() {
 
 			//TODO Phone Home routine to get serial number
 			serialNum = "24FA12C"
-			err = setDeviceSerialNumber(device, bufSize, serialNum)
+			err = gomagtek.SetDeviceSerialNumber(device, bufSize, serialNum)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, err = getDeviceSerialNumber(device, bufSize)
+			serialNum, err = gomagtek.GetDeviceSerialNumber(device, bufSize)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue

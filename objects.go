@@ -1,4 +1,4 @@
-package main
+package gomagtek
 
 type DeviceDescriptor struct {
 	Length uint8			// Size of the Descriptor in Bytes

@@ -1,4 +1,4 @@
-package main
+package gomagtek
 
 const (
 	MagtekVendorID uint16 = 0x0801

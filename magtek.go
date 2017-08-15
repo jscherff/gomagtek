@@ -1,6 +1,7 @@
 package main
 
 import "github.com/google/gousb"
+import "github.com/jscherff/gomagtek"
 import "log"
 import "fmt"
 import "os"
@@ -35,8 +36,7 @@ func main() {
 		bufSize, err := findDeviceBufferSize(device)
 
 		if err != nil {
-			log.Fatalf("Error: %v", err)
-			continue
+			log.Fatalf("Error: %v", err); continue
 		}
 
 		// Information from the Device Descriptor
@@ -52,11 +52,20 @@ func main() {
 		// the device is power-cycled.
 
 		softwareID, _ := getDeviceSoftwareID(device, bufSize)
-		serialNum, _ := getDeviceSerialNumber(device, bufSize)
+
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
+		}
+
+		serialNum, err := getDeviceSerialNumber(device, bufSize)
 
 		// Host name as reported by the operating system.
 
 		hostName, _ := os.Hostname()
+
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
+		}
 
 		fmt.Printf("Before: %s,%s,%s,%s,%s\n", vendorID, productID,
 			softwareID, serialNum, hostName)
@@ -64,13 +73,18 @@ func main() {
 		if len(serialNum) == 0 {
 
 			//TODO Phone Home routine to get serial number
-			err = setDeviceSerialNumber(device, bufSize, "24FA12C")
+			serialNum = "24FA12C"
+			err = setDeviceSerialNumber(device, bufSize, serialNum)
 
 			if err != nil {
-				log.Fatalf("Error: %v", err)
+				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, _ = getDeviceSerialNumber(device, bufSize)
+			serialNum, err = getDeviceSerialNumber(device, bufSize)
+
+			if err != nil {
+				log.Fatalf("Error: %v", err); continue
+			}
 		}
 
 

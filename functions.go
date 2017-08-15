@@ -1,67 +1,70 @@
-package main
+package gomagtek
 
 import "github.com/google/gousb"
+import "path/filepath"
+import "runtime"
 import "errors"
 import "fmt"
 
 var BufferSizes = []int {24, 60}
 
-// TODO: Add more verbose error messages within functions to include the package
-//       and function name. Try to use reflection to get the name of the package
-//       and function
+/*
+ * Get function filename, line number, and function name for error reporting.
+ */
+func getFunctionInfo() string {
+	pc, file, line, success := runtime.Caller(1)
+	function := runtime.FuncForPC(pc)
+	if !success {
+		return "Unknown goroutine"
+	}
+	return fmt.Sprintf("%s:%d: %s()", filepath.Base(file), line, function.Name())
+}
 
-// -----------------------------------------------------------------------------
-// Get the string representation of the vendor ID from the device descriptor.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the string representation of the vendor ID from the device descriptor.
+ */
 func getVendorID(dev *gousb.Device) (string) {
 	return dev.Desc.Vendor.String()
 }
 
-// -----------------------------------------------------------------------------
-// Get the string representation of the product ID from the device descriptor.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the string representation of the product ID from the device descriptor.
+ */
 func getProductID(dev *gousb.Device) (string) {
 	return dev.Desc.Product.String()
 }
 
-// -----------------------------------------------------------------------------
-// Get the software ID from device NVRAM using vendor control transfer.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the software ID from device NVRAM using vendor control transfer.
+ */
 func getDeviceSoftwareID(dev *gousb.Device, bufsize int) (string, error) {
 	return getDeviceProperty(dev, PropertySoftwareID, bufsize)
 }
 
-// -----------------------------------------------------------------------------
-// Get the serial number from device NVRAM using vendor control transfer.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the serial number from device NVRAM using vendor control transfer.
+ */
 func getDeviceSerialNumber(dev *gousb.Device, bufsize int) (string, error) {
 	return getDeviceProperty(dev, PropertySerialNum, bufsize)
 }
 
-// -----------------------------------------------------------------------------
-// Set the serial number in device NVRAM using vendor control transfer.
-// -----------------------------------------------------------------------------
-
+/*
+ * Set the serial number in device NVRAM using vendor control transfer.
+ */
 func setDeviceSerialNumber(dev *gousb.Device, bufsize int, prop string) (error) {
 	return setDeviceProperty(dev, PropertySerialNum, bufsize, prop)
 }
 
-// -----------------------------------------------------------------------------
-// Erase the serial number from device NVRAM using vendor control transfer.
-// -----------------------------------------------------------------------------
-
+/*
+ * Erase the serial number from device NVRAM using vendor control transfer.
+ */
 func eraseDeviceSerialNumber(dev *gousb.Device, bufsize int) (error) {
 	return setDeviceProperty(dev, PropertySerialNum, bufsize, "")
 }
 
-// -----------------------------------------------------------------------------
-// Get the manufacturer name of the device from the device descriptor.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the manufacturer name of the device from the device descriptor.
+ */
 func getManufacturerName(dev *gousb.Device) (string, error) {
 
 	var prop string
@@ -75,16 +78,16 @@ func getManufacturerName(dev *gousb.Device) (string, error) {
 	prop, err = dev.GetStringDescriptor(int(desc.ManufacturerIndex))
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return prop, err
 	}
 
 	return prop, nil
 }
 
-// -----------------------------------------------------------------------------
-// Get the product name of the device from the device descriptor.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the product name of the device from the device descriptor.
+ */
 func getProductName(dev *gousb.Device) (string, error) {
 
 	var prop string
@@ -98,19 +101,19 @@ func getProductName(dev *gousb.Device) (string, error) {
 	prop, err = dev.GetStringDescriptor(int(desc.ProductIndex))
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return prop, err
 	}
 
 	return prop, nil
 }
 
-// -----------------------------------------------------------------------------
-// Get the serial number of the device from the device descriptor. Changes made
-// to the serial number on the device using a control transfer are not reflected
-// in the device descriptor until the device is power-cycled (unplugged). The 
-// most current information is always stored on the device.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the serial number of the device from the device descriptor. Changes made
+ * to the serial number on the device using a control transfer are not reflected
+ * in the device descriptor until the device is power-cycled (unplugged). The 
+ * most current information is always stored on the device.
+ */
 func getSerialNumber(dev *gousb.Device) (string, error) {
 
 	var prop string
@@ -124,16 +127,16 @@ func getSerialNumber(dev *gousb.Device) (string, error) {
 	prop, err = dev.GetStringDescriptor(int(desc.SerialNumberIndex))
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return prop, err
 	}
 
 	return prop, nil
 }
 
-// -----------------------------------------------------------------------------
-// Get the device descriptor of the device.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the device descriptor of the device.
+ */
 func getDeviceDescriptor(dev *gousb.Device) (DeviceDescriptor, error) {
 
 	var desc DeviceDescriptor
@@ -148,6 +151,7 @@ func getDeviceDescriptor(dev *gousb.Device) (DeviceDescriptor, error) {
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return desc, err
 	}
 
@@ -170,10 +174,9 @@ func getDeviceDescriptor(dev *gousb.Device) (DeviceDescriptor, error) {
 	return desc, nil
 }
 
-// -----------------------------------------------------------------------------
-// Get the configuration descriptor of the device.
-// -----------------------------------------------------------------------------
-
+/*
+ * Get the configuration descriptor of the device.
+ */
 func getConfigDescriptor(dev *gousb.Device) (ConfigDescriptor, error) {
 
 	var desc ConfigDescriptor
@@ -188,6 +191,7 @@ func getConfigDescriptor(dev *gousb.Device) (ConfigDescriptor, error) {
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return desc, err
 	}
 
@@ -204,26 +208,34 @@ func getConfigDescriptor(dev *gousb.Device) (ConfigDescriptor, error) {
 	return desc, nil
 }
 
-// -----------------------------------------------------------------------------
-// Use trial and error to find the control transfer data buffer size.
-// -----------------------------------------------------------------------------
-
+/*
+ * Use trial and error to find the control transfer data buffer size.
+ */
 func findDeviceBufferSize(dev *gousb.Device) (int, error) {
+
+	var rc int
+	var err error
 
 	for _, size := range BufferSizes {
 
 		data := make([]byte, size)
 		copy(data, []byte{0x00, 0x01, 0x00})
-		rc, _ := dev.Control(0x21, 0x09, 0x0300, 0x0000, data)
+		rc, err = dev.Control(0x21, 0x09, 0x0300, 0x0000, data)
+
+		// If command is successful, the return code will be a
+		// non-zero positive integer reflecting the buffer size.
 
 		if rc == size {
 			return size, nil
 		}
 	}
 
-	return 0, fmt.Errorf("Unsupported device")
+	return 0, fmt.Errorf("%s: unsupported device: %v)", getFunctionInfo(), err)
 }
 
+/*
+ * Set a property on the device NVRAM using vendor commands in control transfer.
+ */
 func setDeviceProperty(dev *gousb.Device, id uint8, bufsize int, prop string) (error) {
 
 	if len(prop) > bufsize - 3 {
@@ -242,6 +254,7 @@ func setDeviceProperty(dev *gousb.Device, id uint8, bufsize int, prop string) (e
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return err
 	}
 
@@ -255,18 +268,21 @@ func setDeviceProperty(dev *gousb.Device, id uint8, bufsize int, prop string) (e
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return err
 	}
 
 	if data[0] > 0x00 {
-		return fmt.Errorf("Vendor command error: return code %d", int(data[0]))
+		err = fmt.Errorf("%s: Vendor command error: return code %d",
+			getFunctionInfo(), int(data[0]))
 	}
-
-	// err = dev.Reset()
 
 	return err
 }
 
+/*
+ * Get a property from the device NVRAM using vendor commands in control transfer.
+ */
 func getDeviceProperty(dev *gousb.Device, id uint8, bufsize int) (string, error) {
 
 	var prop string
@@ -282,6 +298,7 @@ func getDeviceProperty(dev *gousb.Device, id uint8, bufsize int) (string, error)
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return prop, err
 	}
 
@@ -295,11 +312,13 @@ func getDeviceProperty(dev *gousb.Device, id uint8, bufsize int) (string, error)
 		data)
 
 	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 		return prop, err
 	}
 
 	if data[0] > 0x00 {
-		return prop, fmt.Errorf("Vendor command error: return code %d", int(data[0]))
+		err = fmt.Errorf("%s: Vendor command error: return code %d",
+			getFunctionInfo(), int(data[0]))
 	}
 
 	if data[1] > 0x00 {
@@ -309,15 +328,25 @@ func getDeviceProperty(dev *gousb.Device, id uint8, bufsize int) (string, error)
 	return prop, nil
 }
 
+/*
+ * Reset the device using vendor commands in control transfer.
+ */
 func resetDevice(dev *gousb.Device, bufsize int) (int, error) {
 
 	data := make([]byte, bufsize)
 	data[0] = 0x02
 
-	return dev.Control(
+	rc, err := dev.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
 		InterfaceNumber,
 		data)
+
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return rc, err
+	}
+
+	return rc, err
 }

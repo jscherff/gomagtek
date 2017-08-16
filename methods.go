@@ -2,6 +2,7 @@ package gomagtek
 
 import "path/filepath"
 import "runtime"
+import "math"
 import "fmt"
 
 // ===============
@@ -30,24 +31,76 @@ func (d *Device) GetSoftwareID() (string, error) {
 }
 
 /*
- * Get the serial number from device NVRAM using vendor control transfer.
+ * Get the MagneSafe version from device NVRAM using vendor control transfer.
  */
-func (d *Device) GetSerialNumber() (string, error) {
-	return d.getProperty(PropertySerialNum)
+func (d *Device) GetMagnesafeVersion() (string, error) {
+	return d.getProperty(PropertyMagnesafeVersion)
 }
 
 /*
- * Set the serial number in device NVRAM using vendor control transfer.
+ * Get the USB serial number from device NVRAM using vendor control transfer.
  */
-func (d *Device) SetSerialNumber(prop string) (error) {
-	return d.setProperty(PropertySerialNum, prop)
+func (d *Device) GetUsbSerialNumber() (string, error) {
+	return d.getProperty(PropertyUsbSerialNum)
+}
+
+/*
+ * Set the USB serial number in device NVRAM using vendor control transfer.
+ */
+func (d *Device) SetUsbSerialNumber(prop string) (error) {
+	return d.setProperty(PropertyUsbSerialNum, prop)
+}
+
+/*
+ * Erase the USB serial number from device NVRAM using vendor control transfer.
+ */
+func (d *Device) EraseUsbSerialNumber() (error) {
+	return d.setProperty(PropertyUsbSerialNum, "")
+}
+
+/*
+ * Get the device serial number from device NVRAM using vendor control transfer.
+ */
+func (d *Device) GetDevSerialNumber() (string, error) {
+	return d.getProperty(PropertyDevSerialNum)
+}
+
+/*
+ * Set the device serial number in device NVRAM using vendor control transfer.
+ * On Dynamag devices, this command will fail with result code 07 if the serial
+ * number has already been configured.
+ */
+func (d *Device) SetDevSerialNumber(prop string) (error) {
+	return d.setProperty(PropertyDevSerialNum, prop)
 }
 
 /*
  * Erase the serial number from device NVRAM using vendor control transfer.
+ * On Dynamag devices, this command will fail with result code 07 if the serial
+ * number has already been configured.
  */
-func (d *Device) EraseSerialNumber() (error) {
-	return d.setProperty(PropertySerialNum, "")
+func (d *Device) EraseDevSerialNumber() (error) {
+	return d.setProperty(PropertyDevSerialNum, "")
+}
+
+/*
+ * Copy 'length' characters from the device serial number to the USB serial
+ * number in device NVRAM using vendor control transfer.
+ */
+func (d *Device) CopyDevSerialNumber(length int) (error) {
+
+	ds, err := d.GetDevSerialNumber()
+
+	if err == nil {
+		limit := int(math.Min(float64(length), float64(len(ds))))
+		err = d.SetUsbSerialNumber(ds[:limit])
+	}
+
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	return err
 }
 
 /*
@@ -94,7 +147,7 @@ func (d *Device) GetProductName() (string, error) {
  * in the device descriptor until the device is power-cycled (unplugged). The 
  * most current information is always stored on the device.
  */
-func (d *Device) GetSerialNumberDesc() (string, error) {
+func (d *Device) GetUsbSerialNumberDesc() (string, error) {
 
 	var prop string
 	var err error
@@ -140,11 +193,14 @@ func (d *Device) VendorReset() (int, error) {
  * Get function filename, line number, and function name for error reporting.
  */
 func getFunctionInfo() string {
+
 	pc, file, line, success := runtime.Caller(1)
 	function := runtime.FuncForPC(pc)
+
 	if !success {
 		return "Unknown goroutine"
 	}
+
 	return fmt.Sprintf("%s:%d: %s()", filepath.Base(file), line, function.Name())
 }
 
@@ -162,27 +218,28 @@ func (d *Device) getDeviceDescriptor() (error) {
 		InterfaceNumber,
 		data)
 
-	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	if err == nil {
+
+		*d.DeviceDescriptor = DeviceDescriptor {
+			data[0],
+			data[1],
+			uint16(data[2]) + (uint16(data[3])<<8),
+			data[4],
+			data[5],
+			data[6],
+			data[7],
+			uint16(data[8]) + (uint16(data[9])<<8),
+			uint16(data[10]) + (uint16(data[11])<<8),
+			uint16(data[12]) + (uint16(data[13])<<8),
+			data[14],
+			data[15],
+			data[16],
+			data[17]}
+	} else {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
-	*d.DeviceDescriptor = DeviceDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3])<<8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		uint16(data[8]) + (uint16(data[9])<<8),
-		uint16(data[10]) + (uint16(data[11])<<8),
-		uint16(data[12]) + (uint16(data[13])<<8),
-		data[14],
-		data[15],
-		data[16],
-		data[17]}
-
-	return nil
+	return err
 }
 
 /*
@@ -199,21 +256,22 @@ func (d *Device) getConfigDescriptor() (error) {
 		InterfaceNumber,
 		data)
 
-	if err != nil {
+	if err == nil {
+
+		*d.ConfigDescriptor = ConfigDescriptor {
+			data[0],
+			data[1],
+			uint16(data[2]) + (uint16(data[3]) << 8),
+			data[4],
+			data[5],
+			data[6],
+			data[7],
+			data[8]}
+	} else {
 		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
-	*d.ConfigDescriptor = ConfigDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3]) << 8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		data[8]}
-
-	return nil
+	return err
 }
 
 /*
@@ -262,8 +320,7 @@ func (d *Device) getProperty(id uint8) (string, error) {
 		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return prop, err
+		return prop, fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
 	data = make([]byte, d.BufferSize)
@@ -276,12 +333,11 @@ func (d *Device) getProperty(id uint8) (string, error) {
 		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return prop, err
+		return prop, fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
 	if data[0] > 0x00 {
-		err = fmt.Errorf("%s: command error: return code %d",
+		return prop, fmt.Errorf("%s: command error: return code %d",
 			getFunctionInfo(), int(data[0]))
 	}
 
@@ -313,8 +369,7 @@ func (d *Device) setProperty(id uint8, prop string) (error) {
 		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return err
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
 	data = make([]byte, d.BufferSize)
@@ -327,8 +382,7 @@ func (d *Device) setProperty(id uint8, prop string) (error) {
 		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return err
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
 	if data[0] > 0x00 {

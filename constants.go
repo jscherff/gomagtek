@@ -42,7 +42,9 @@ const (
 	ResultCodeBadParam uint8 = 0x02
 
 	PropertySoftwareID uint8 = 0x00
-	PropertySerialNum uint8 = 0x01
+	PropertyUsbSerialNum uint8 = 0x01
+	PropertyDevSerialNum uint8 = 0x03
+	PropertyMagnesafeVersion uint8 = 0x04
 )
 
 var (

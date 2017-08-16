@@ -4,10 +4,6 @@ import "github.com/google/gousb"
 import "github.com/jscherff/gomagtek"
 import "log"
 import "fmt"
-import "os"
-
-var printFormat string = "\tVendor ID:\t%s\n\tProduct ID:\t%s\n\t" +
-	"Software ID:\t%s\n\tSerial Num:\t%s\n\tHost Name:\t%s\n\n"
 
 func main() {
 
@@ -32,29 +28,35 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		vendorID := magtek.GetVendorID()
-		productID := magtek.GetProductID()
 
-		hostName, err := os.Hostname()
+		magnesafeVersion, err := magtek.GetMagnesafeVersion()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		softwareID, err := magtek.GetSoftwareID()
+		fmt.Printf("MagneSafe Version: %s\n", magnesafeVersion)
+
+
+		devSerialNum, err:= magtek.GetDevSerialNumber()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		usbSerialNum, err := magtek.GetUsbSerialNumber()
+		fmt.Printf("Device Serial Number: %s\n", devSerialNum)
+
+
+		usbSerialNum, err:= magtek.GetUsbSerialNumber()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("BEFORE\n" + printFormat, vendorID, productID,
-			softwareID, usbSerialNum, hostName)
+		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
+
+
+		fmt.Println("Erasing serial number...")
 
 		err = magtek.EraseUsbSerialNumber()
 
@@ -62,13 +64,35 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
+
+		fmt.Println("Checking serial number...")
+
 		usbSerialNum, err = magtek.GetUsbSerialNumber()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("AFTER\n" + printFormat, vendorID, productID,
-			softwareID, usbSerialNum, hostName)
+		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
+
+
+		fmt.Println("Copying serial number...")
+
+		err = magtek.CopyDevSerialNumber(7)
+
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
+		}
+
+
+		fmt.Println("Checking serial number...")
+
+		usbSerialNum, err = magtek.GetUsbSerialNumber()
+
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
+		}
+
+		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
 	}
 }

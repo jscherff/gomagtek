@@ -29,9 +29,9 @@ func main() {
 
 	for _, device := range devices {
 
-		magtek, err := gomagtek.NewDevice(device)
+		defer device.Close()
 
-		defer magtek.Close()
+		magtek, err := gomagtek.NewDevice(device)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -59,25 +59,25 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := magtek.GetSerialNumber()
+		usbSerialNum, err := magtek.GetUsbSerialNumber()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
 		fmt.Printf("BEFORE\n" + printFormat, vendorID, productID,
-			softwareID, serialNum, hostName)
+			softwareID, usbSerialNum, hostName)
 
-		if len(serialNum) == 0 {
+		if len(usbSerialNum) == 0 {
 
-			serialNum = "24FA12C" //TODO: obtain from server
-			err = magtek.SetSerialNumber(serialNum)
+			usbSerialNum = "24FA12C" //TODO: obtain from server
+			err = magtek.SetUsbSerialNumber(usbSerialNum)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, err = magtek.GetSerialNumber()
+			usbSerialNum, err = magtek.GetUsbSerialNumber()
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
@@ -85,6 +85,6 @@ func main() {
 		}
 
 		fmt.Printf("AFTER\n" + printFormat, vendorID, productID,
-			softwareID, serialNum, hostName)
+			softwareID, usbSerialNum, hostName)
 	}
 }

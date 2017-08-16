@@ -129,33 +129,6 @@ func (d *Device) GetSerialNumberDesc() (string, error) {
 }
 
 /*
- * Use trial and error to find the control transfer data buffer size.
- * Failure to use the correct size for control transfers carrying
- * vendor commands will result in a LIBUSB_ERROR_PIPE error.
- */
-func (d *Device) findBufferSize(values []int) (int, error) {
-
-	var rc int
-	var err error
-
-	for _, size := range values {
-
-		data := make([]byte, size)
-		copy(data, []byte{0x00, 0x01, 0x00})
-		rc, err = d.Control(0x21, 0x09, 0x0300, 0x0000, data)
-
-		// If command is successful, the return code will be a
-		// non-zero positive integer reflecting the buffer size.
-
-		if rc == size {
-			return size, nil
-		}
-	}
-
-	return 0, fmt.Errorf("%s: unsupported device: %v)", getFunctionInfo(), err)
-}
-
-/*
  * Reset the device using vendor commands in control transfer.
  */
 func (d *Device) VendorReset() (int, error) {
@@ -194,47 +167,28 @@ func getFunctionInfo() string {
 }
 
 /*
- * Set a property on the device NVRAM using vendor commands in control transfer.
+ * Use trial and error to find the control transfer data buffer size.
+ * Failure to use the correct size for control transfers carrying
+ * vendor commands will result in a LIBUSB_ERROR_PIPE error.
  */
-func (d *Device) setProperty(id uint8, prop string) (error) {
+func (d *Device) findBufferSize() (error) {
 
-	if len(prop) > d.BufferSize - 3 {
-		return fmt.Errorf("%s: property length > data buffer", getFunctionInfo())
+	var err error
+	var rc, size int
+
+	for _, size = range vendorBufferSizes {
+
+		data := make([]byte, size)
+		copy(data, []byte{0x00, 0x01, 0x00})
+		rc, err = d.Control(0x21, 0x09, 0x0300, 0x0000, data)
+
+		if rc == size {
+			d.BufferSize = size
+		}
 	}
-
-	data := make([]byte, d.BufferSize)
-	copy(data[0:], []byte{CommandSetProperty, uint8(len(prop)+1), id})
-	copy(data[3:], prop)
-
-	_, err := d.Control(
-		RequestTypeVendorDeviceOut,
-		RequestSetReport,
-		TypeFeatureReport,
-		InterfaceNumber,
-		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return err
-	}
-
-	data = make([]byte, d.BufferSize)
-
-	_, err = d.Control(
-		RequestTypeVendorDeviceIn,
-		RequestGetReport,
-		TypeFeatureReport,
-		InterfaceNumber,
-		data)
-
-	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
-		return err
-	}
-
-	if data[0] > 0x00 {
-		err = fmt.Errorf("%s: Vendor command error: return code %d",
-			getFunctionInfo(), int(data[0]))
+		err = fmt.Errorf("%s: unsupported device", getFunctionInfo())
 	}
 
 	return err
@@ -286,4 +240,51 @@ func (d *Device) getProperty(id uint8) (string, error) {
 	}
 
 	return prop, err
+}
+
+/*
+ * Set a property on the device NVRAM using vendor commands in control transfer.
+ */
+func (d *Device) setProperty(id uint8, prop string) (error) {
+
+	if len(prop) > d.BufferSize - 3 {
+		return fmt.Errorf("%s: property length > data buffer", getFunctionInfo())
+	}
+
+	data := make([]byte, d.BufferSize)
+	copy(data[0:], []byte{CommandSetProperty, uint8(len(prop)+1), id})
+	copy(data[3:], prop)
+
+	_, err := d.Control(
+		RequestTypeVendorDeviceOut,
+		RequestSetReport,
+		TypeFeatureReport,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return err
+	}
+
+	data = make([]byte, d.BufferSize)
+
+	_, err = d.Control(
+		RequestTypeVendorDeviceIn,
+		RequestGetReport,
+		TypeFeatureReport,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return err
+	}
+
+	if data[0] > 0x00 {
+		err = fmt.Errorf("%s: Vendor command error: return code %d",
+			getFunctionInfo(), int(data[0]))
+	}
+
+	return err
 }

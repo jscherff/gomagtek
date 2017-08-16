@@ -8,23 +8,31 @@ const(
 	BufferSizeConfigDescriptor int = 9
 )
 
-var VendorBufferSizes = []int {24, 60}
+var vendorBufferSizes = []int {24, 60}
 
 
 type Device struct {
 	*gousb.Device
+	DeviceDescriptor *DeviceDescriptor
+	ConfigDescriptor *ConfigDescriptor
 	BufferSize int
 }
 
-func NewDevice(dev *gousb.Device) (*Device, error) {
-	//return &Device{dev}
+func NewDevice(d *gousb.Device) (*Device, error) {
+
 	var err error
-	newDevice := &Device{dev, 0}
-	newDevice.BufferSize, err = newDevice.findBufferSize(VendorBufferSizes)
+
+	nd := &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
+
+	err = nd.getDeviceDescriptor()
+	err = nd.getConfigDescriptor()
+	err = nd.findBufferSize()
+
 	if err != nil {
 		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
-	return newDevice, err
+
+	return nd, err
 }
 
 type DeviceDescriptor struct {
@@ -111,6 +119,74 @@ func (cd *ConfigDescriptor) Get (dev *Device) (error) {
 	}
 
 	*cd = ConfigDescriptor {
+		data[0],
+		data[1],
+		uint16(data[2]) + (uint16(data[3]) << 8),
+		data[4],
+		data[5],
+		data[6],
+		data[7],
+		data[8]}
+
+	return nil
+}
+
+/*
+ * Get the device descriptor of the device.
+ */
+func (d *Device) getDeviceDescriptor() (error) {
+
+	data := make([]byte, BufferSizeDeviceDescriptor)
+
+	_, err := d.Control(
+		RequestTypeStandardDeviceIn,
+		RequestGetDescriptor,
+		TypeDeviceDescriptor,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	*d.DeviceDescriptor = DeviceDescriptor {
+		data[0],
+		data[1],
+		uint16(data[2]) + (uint16(data[3])<<8),
+		data[4],
+		data[5],
+		data[6],
+		data[7],
+		uint16(data[8]) + (uint16(data[9])<<8),
+		uint16(data[10]) + (uint16(data[11])<<8),
+		uint16(data[12]) + (uint16(data[13])<<8),
+		data[14],
+		data[15],
+		data[16],
+		data[17]}
+
+	return nil
+}
+
+/*
+ * Get the config descriptor of the device.
+ */
+func (d *Device) getConfigDescriptor() (error) {
+
+	data := make([]byte, BufferSizeConfigDescriptor)
+
+	_, err := d.Control(
+		RequestTypeStandardDeviceIn,
+		RequestGetDescriptor,
+		TypeConfigDescriptor,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	*d.ConfigDescriptor = ConfigDescriptor {
 		data[0],
 		data[1],
 		uint16(data[2]) + (uint16(data[3]) << 8),

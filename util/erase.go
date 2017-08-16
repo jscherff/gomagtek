@@ -1,7 +1,7 @@
 package main
 
 import "github.com/google/gousb"
-import "../../gomagtek"
+import "github.com/jscherff/gomagtek"
 import "log"
 import "fmt"
 import "os"

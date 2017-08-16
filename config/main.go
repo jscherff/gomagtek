@@ -6,6 +6,9 @@ import "log"
 import "fmt"
 import "os"
 
+var printFormat string = "\tVendor ID:\t%s\n\tProduct ID:\t%s\n\t" +
+	"Software ID:\t%s\n\tSerial Num:\t%s\n\tHost Name:\t%s\n\n"
+
 func main() {
 
 	context := gousb.NewContext()
@@ -62,14 +65,8 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNumDesc, err := magtek.GetSerialNumberDesc()
-
-		if err != nil {
-			log.Fatalf("Error: %v", err); continue
-		}
-
-		fmt.Printf("Before:\t%s,%s,%s,%s,(%s),%s\n", vendorID, productID,
-			softwareID, serialNum, serialNumDesc, hostName)
+		fmt.Printf("BEFORE\n" + printFormat, vendorID, productID,
+			softwareID, serialNum, hostName)
 
 		if len(serialNum) == 0 {
 
@@ -87,13 +84,7 @@ func main() {
 			}
 		}
 
-		serialNumDesc, err = magtek.GetSerialNumberDesc()
-
-		if err != nil {
-			log.Fatalf("Error: %v", err); continue
-		}
-
-		fmt.Printf("After\t%s,%s,%s,%s,(%s),%s\n", vendorID, productID,
-			softwareID, serialNum, serialNumDesc, hostName)
+		fmt.Printf("AFTER\n" + printFormat, vendorID, productID,
+			softwareID, serialNum, hostName)
 	}
 }

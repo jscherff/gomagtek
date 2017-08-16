@@ -28,6 +28,8 @@ const (
 
 	InterfaceNumber uint16 = 0x0000
 
+	BufferSizeDeviceDescriptor int = 18
+	BufferSizeConfigDescriptor int = 9
 	BufferSizeSureswipe int = 24
 	BufferSizeDynamag int = 60
 
@@ -41,4 +43,8 @@ const (
 
 	PropertySoftwareID uint8 = 0x00
 	PropertySerialNum uint8 = 0x01
+)
+
+var (
+	vendorBufferSizes = []int {24, 60}
 )

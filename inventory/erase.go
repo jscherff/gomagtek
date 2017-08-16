@@ -11,11 +11,6 @@ func main() {
 	context := gousb.NewContext()
 	defer context.Close()
 
-	// Open devices that report a Magtek vendor ID, 0x0801.
-	// We omit error checking on OpenDevices() because this
-	// function terminates with 'libusb: not found [code -5]'
-	// on Windows systems.
-
 	devices, _ := context.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		return desc.Vendor == gousb.ID(gomagtek.MagtekVendorID)
 	})
@@ -36,13 +31,6 @@ func main() {
 
 		vendorID := magtek.GetVendorID()
 		productID := magtek.GetProductID()
-
-		// Information obtained from the device using control
-		// transfer. Serial number can also be obtained using
-		// the devices getStringDescriptor command with the
-		// serial number index obtained from the device des-
-		// criptor; however, this value is not refreshed until
-		// the device is power-cycled.
 
 		hostName, err := os.Hostname()
 
@@ -71,20 +59,18 @@ func main() {
 		fmt.Printf("Before:\t%s,%s,%s,%s,(%s),%s\n", vendorID, productID,
 			softwareID, serialNum, serialNumDesc, hostName)
 
-		if len(serialNum) == 0 {
+		err = magtek.EraseSerialNumber()
 
-			serialNum = "24FA12C" //TODO: obtain from server
-			err = magtek.SetSerialNumber(serialNum)
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
+		}
 
-			if err != nil {
-				log.Fatalf("Error: %v", err); continue
-			}
+		magtek.Reset()
 
-			serialNum, err = magtek.GetSerialNumber()
+		serialNum, err = magtek.GetSerialNumber()
 
-			if err != nil {
-				log.Fatalf("Error: %v", err); continue
-			}
+		if err != nil {
+			log.Fatalf("Error: %v", err); continue
 		}
 
 		serialNumDesc, err = magtek.GetSerialNumberDesc()
@@ -93,7 +79,8 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("After\t%s,%s,%s,%s,(%s),%s\n", vendorID, productID,
+		fmt.Printf("After:\t%s,%s,%s,%s,(%s),%s\n", vendorID, productID,
 			softwareID, serialNum, serialNumDesc, hostName)
+
 	}
 }

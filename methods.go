@@ -4,9 +4,9 @@ import "path/filepath"
 import "runtime"
 import "fmt"
 
-// ==============
-// Exported Names
-// ==============
+// ===============
+// Public Methods.
+// ===============
 
 /*
  * Get the string representation of the vendor ID from the device descriptor.
@@ -56,16 +56,10 @@ func (d *Device) EraseSerialNumber() (error) {
 func (d *Device) GetManufacturerName() (string, error) {
 
 	var prop string
+	var err error
 
-	desc := new(DeviceDescriptor)
-	err := desc.Get(d)
-
-	if err != nil {
-		return prop, err // Get method generates error message
-	}
-
-	if desc.ManufacturerIndex > 0 {
-		prop, err = d.GetStringDescriptor(int(desc.ManufacturerIndex))
+	if d.DeviceDescriptor.ManufacturerIndex > 0 {
+		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.ManufacturerIndex))
 	}
 
 	if err != nil {
@@ -81,16 +75,10 @@ func (d *Device) GetManufacturerName() (string, error) {
 func (d *Device) GetProductName() (string, error) {
 
 	var prop string
+	var err error
 
-	desc := new(DeviceDescriptor)
-	err := desc.Get(d)
-
-	if err != nil {
-		return prop, err // Get method generates error message
-	}
-
-	if desc.ProductIndex > 0 {
-		prop, err = d.GetStringDescriptor(int(desc.ProductIndex))
+	if d.DeviceDescriptor.ProductIndex > 0 {
+		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.ProductIndex))
 	}
 
 	if err != nil {
@@ -109,16 +97,10 @@ func (d *Device) GetProductName() (string, error) {
 func (d *Device) GetSerialNumberDesc() (string, error) {
 
 	var prop string
+	var err error
 
-	desc := new(DeviceDescriptor)
-	err := desc.Get(d)
-
-	if err != nil {
-		return prop, err // Get method generates error message
-	}
-
-	if desc.SerialNumberIndex > 0 {
-		prop, err = d.GetStringDescriptor(int(desc.SerialNumberIndex))
+	if d.DeviceDescriptor.SerialNumberIndex > 0 {
+		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.SerialNumberIndex))
 	}
 
 	if err != nil {
@@ -151,7 +133,7 @@ func (d *Device) VendorReset() (int, error) {
 }
 
 // ================
-// Unexported Names
+// Private Methods.
 // ================
 
 /*
@@ -167,14 +149,82 @@ func getFunctionInfo() string {
 }
 
 /*
+ * Get the device descriptor of the device.
+ */
+func (d *Device) getDeviceDescriptor() (error) {
+
+	data := make([]byte, BufferSizeDeviceDescriptor)
+
+	_, err := d.Control(
+		RequestTypeStandardDeviceIn,
+		RequestGetDescriptor,
+		TypeDeviceDescriptor,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	*d.DeviceDescriptor = DeviceDescriptor {
+		data[0],
+		data[1],
+		uint16(data[2]) + (uint16(data[3])<<8),
+		data[4],
+		data[5],
+		data[6],
+		data[7],
+		uint16(data[8]) + (uint16(data[9])<<8),
+		uint16(data[10]) + (uint16(data[11])<<8),
+		uint16(data[12]) + (uint16(data[13])<<8),
+		data[14],
+		data[15],
+		data[16],
+		data[17]}
+
+	return nil
+}
+
+/*
+ * Get the config descriptor of the device.
+ */
+func (d *Device) getConfigDescriptor() (error) {
+
+	data := make([]byte, BufferSizeConfigDescriptor)
+
+	_, err := d.Control(
+		RequestTypeStandardDeviceIn,
+		RequestGetDescriptor,
+		TypeConfigDescriptor,
+		InterfaceNumber,
+		data)
+
+	if err != nil {
+		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	*d.ConfigDescriptor = ConfigDescriptor {
+		data[0],
+		data[1],
+		uint16(data[2]) + (uint16(data[3]) << 8),
+		data[4],
+		data[5],
+		data[6],
+		data[7],
+		data[8]}
+
+	return nil
+}
+
+/*
  * Use trial and error to find the control transfer data buffer size.
  * Failure to use the correct size for control transfers carrying
  * vendor commands will result in a LIBUSB_ERROR_PIPE error.
  */
 func (d *Device) findBufferSize() (error) {
 
-	var err error
 	var rc, size int
+	var err error
 
 	for _, size = range vendorBufferSizes {
 
@@ -231,7 +281,7 @@ func (d *Device) getProperty(id uint8) (string, error) {
 	}
 
 	if data[0] > 0x00 {
-		err = fmt.Errorf("%s: Vendor command error: return code %d",
+		err = fmt.Errorf("%s: command error: return code %d",
 			getFunctionInfo(), int(data[0]))
 	}
 
@@ -282,7 +332,7 @@ func (d *Device) setProperty(id uint8, prop string) (error) {
 	}
 
 	if data[0] > 0x00 {
-		err = fmt.Errorf("%s: Vendor command error: return code %d",
+		err = fmt.Errorf("%s: command error: return code %d",
 			getFunctionInfo(), int(data[0]))
 	}
 

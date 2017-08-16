@@ -3,14 +3,14 @@ package gomagtek
 import "github.com/google/gousb"
 import "fmt"
 
-const(
-	BufferSizeDeviceDescriptor int = 18
-	BufferSizeConfigDescriptor int = 9
-)
-
-var vendorBufferSizes = []int {24, 60}
-
-
+/*
+ * The gomagtek Device struct represents a USB device. The Device struct
+ * Desc field contains all information about the device from gousb.Device.
+ * The gomagtek Device extends the gousb Device by adding the raw device
+ * descriptor, the config descriptor of the active config, and the size
+ * of the data buffer required by the device for vendor commands sent via
+ * control transfer.
+ */
 type Device struct {
 	*gousb.Device
 	DeviceDescriptor *DeviceDescriptor
@@ -18,10 +18,12 @@ type Device struct {
 	BufferSize int
 }
 
+/*
+ * Construct a new gomagtek Device from a gousb Device.
+ */
 func NewDevice(d *gousb.Device) (*Device, error) {
 
 	var err error
-
 	nd := &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
 
 	err = nd.getDeviceDescriptor()
@@ -35,6 +37,13 @@ func NewDevice(d *gousb.Device) (*Device, error) {
 	return nd, err
 }
 
+/*
+ * The gomagtek DeviceDescriptor specifies some basic information about
+ * the USB device, such as the supported USB version, maximum packet size,
+ * vendor and product IDs and the number of possible configurations the
+ * device can have. This differs from the descriptor provided by gousb in
+ * that it includes all the fields in raw format.
+ */
 type DeviceDescriptor struct {
 	Length uint8			// Size of the Descriptor in Bytes
 	DescriptorType uint8		// Device Descriptor Type (0x01)
@@ -52,6 +61,51 @@ type DeviceDescriptor struct {
 	NumConfigurations uint8		// Number of Possible Configurations
 }
 
+/*
+ * Construct a new gomagtek DeviceDescriptor from a gousb Device.
+ */
+func NewDeviceDescriptor(d *gousb.Device) (*DeviceDescriptor, error) {
+
+	var err error
+	ndd := new(DeviceDescriptor)
+	data := make([]byte, BufferSizeDeviceDescriptor)
+
+	_, err = d.Control(
+		RequestTypeStandardDeviceIn,
+		RequestGetDescriptor,
+		TypeDeviceDescriptor,
+		InterfaceNumber,
+		data)
+
+	if err == nil {
+
+		*ndd = DeviceDescriptor {
+			data[0],
+			data[1],
+			uint16(data[2]) + (uint16(data[3])<<8),
+			data[4],
+			data[5],
+			data[6],
+			data[7],
+			uint16(data[8]) + (uint16(data[9])<<8),
+			uint16(data[10]) + (uint16(data[11])<<8),
+			uint16(data[12]) + (uint16(data[13])<<8),
+			data[14],
+			data[15],
+			data[16],
+			data[17]}
+	} else {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	return ndd, err
+}
+
+/*
+ * The gomagtek ConfigDescriptor represents the active configuration of
+ * the USB device. A device can have several different configurations,
+ * though most have only one.
+ */
 type ConfigDescriptor struct {
 	Length uint8			// Size of Descriptor in Bytes
 	DescriptorType uint8		// Configuration Descriptor Type (0x02)
@@ -64,137 +118,35 @@ type ConfigDescriptor struct {
 }
 
 /*
- * Get the device descriptor of the device.
+ * Construct a new gomagtek ConfigDescriptor from a gousb Device.
  */
-func (dd *DeviceDescriptor) Get(dev *Device) (error) {
+func NewConfigDescriptor(d *gousb.Device) (*ConfigDescriptor, error) {
 
-	data := make([]byte, BufferSizeDeviceDescriptor)
-
-	_, err := dev.Control(
-		RequestTypeStandardDeviceIn,
-		RequestGetDescriptor,
-		TypeDeviceDescriptor,
-		InterfaceNumber,
-		data)
-
-	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
-	}
-
-	*dd = DeviceDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3])<<8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		uint16(data[8]) + (uint16(data[9])<<8),
-		uint16(data[10]) + (uint16(data[11])<<8),
-		uint16(data[12]) + (uint16(data[13])<<8),
-		data[14],
-		data[15],
-		data[16],
-		data[17]}
-
-	return nil
-}
-
-/*
- * Get the config descriptor of the device.
- */
-func (cd *ConfigDescriptor) Get (dev *Device) (error) {
-
+	var err error
+	ncd := new(ConfigDescriptor)
 	data := make([]byte, BufferSizeConfigDescriptor)
 
-	_, err := dev.Control(
+	_, err = d.Control(
 		RequestTypeStandardDeviceIn,
 		RequestGetDescriptor,
 		TypeConfigDescriptor,
 		InterfaceNumber,
 		data)
 
-	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	if err == nil {
+
+		*ncd = ConfigDescriptor {
+			data[0],
+			data[1],
+			uint16(data[2]) + (uint16(data[3]) << 8),
+			data[4],
+			data[5],
+			data[6],
+			data[7],
+			data[8]}
+	} else {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
 	}
 
-	*cd = ConfigDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3]) << 8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		data[8]}
-
-	return nil
-}
-
-/*
- * Get the device descriptor of the device.
- */
-func (d *Device) getDeviceDescriptor() (error) {
-
-	data := make([]byte, BufferSizeDeviceDescriptor)
-
-	_, err := d.Control(
-		RequestTypeStandardDeviceIn,
-		RequestGetDescriptor,
-		TypeDeviceDescriptor,
-		InterfaceNumber,
-		data)
-
-	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
-	}
-
-	*d.DeviceDescriptor = DeviceDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3])<<8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		uint16(data[8]) + (uint16(data[9])<<8),
-		uint16(data[10]) + (uint16(data[11])<<8),
-		uint16(data[12]) + (uint16(data[13])<<8),
-		data[14],
-		data[15],
-		data[16],
-		data[17]}
-
-	return nil
-}
-
-/*
- * Get the config descriptor of the device.
- */
-func (d *Device) getConfigDescriptor() (error) {
-
-	data := make([]byte, BufferSizeConfigDescriptor)
-
-	_, err := d.Control(
-		RequestTypeStandardDeviceIn,
-		RequestGetDescriptor,
-		TypeConfigDescriptor,
-		InterfaceNumber,
-		data)
-
-	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
-	}
-
-	*d.ConfigDescriptor = ConfigDescriptor {
-		data[0],
-		data[1],
-		uint16(data[2]) + (uint16(data[3]) << 8),
-		data[4],
-		data[5],
-		data[6],
-		data[7],
-		data[8]}
-
-	return nil
+	return ncd, err
 }

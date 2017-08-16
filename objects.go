@@ -8,10 +8,24 @@ const(
 	BufferSizeConfigDescriptor int = 9
 )
 
+var VendorBufferSizes = []int {24, 60}
 
-// type Device struct {
-//	gousb.Device
-// }
+
+type Device struct {
+	*gousb.Device
+	BufferSize int
+}
+
+func NewDevice(dev *gousb.Device) (*Device, error) {
+	//return &Device{dev}
+	var err error
+	newDevice := &Device{dev, 0}
+	newDevice.BufferSize, err = newDevice.findBufferSize(VendorBufferSizes)
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+	return newDevice, err
+}
 
 type DeviceDescriptor struct {
 	Length uint8			// Size of the Descriptor in Bytes
@@ -44,7 +58,7 @@ type ConfigDescriptor struct {
 /*
  * Get the device descriptor of the device.
  */
-func (dd *DeviceDescriptor) Get(dev *gousb.Device) (error) {
+func (dd *DeviceDescriptor) Get(dev *Device) (error) {
 
 	data := make([]byte, BufferSizeDeviceDescriptor)
 
@@ -81,7 +95,7 @@ func (dd *DeviceDescriptor) Get(dev *gousb.Device) (error) {
 /*
  * Get the config descriptor of the device.
  */
-func (cd *ConfigDescriptor) Get (dev *gousb.Device) (error) {
+func (cd *ConfigDescriptor) Get (dev *Device) (error) {
 
 	data := make([]byte, BufferSizeConfigDescriptor)
 

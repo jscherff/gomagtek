@@ -26,14 +26,9 @@ func main() {
 
 	for _, device := range devices {
 
-		defer device.Close()
+		magtek, err := gomagtek.NewDevice(device)
 
-		// Determine the data buffer size for vendor commands.
-		// Failure to use the correct size value for control
-		// transfers carrying vendor commands will result in
-		// a LIBUSB_ERROR_PIPE error.
-
-		bufSize, err := gomagtek.FindDeviceBufferSize(device)
+		defer magtek.Close()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -41,8 +36,8 @@ func main() {
 
 		// Information from the Device Descriptor
 
-		vendorID := gomagtek.GetVendorID(device)
-		productID := gomagtek.GetProductID(device)
+		vendorID := magtek.GetVendorID()
+		productID := magtek.GetProductID()
 
 		// Information obtained from the device using control
 		// transfer. Serial number can also be obtained using
@@ -51,17 +46,17 @@ func main() {
 		// criptor; however, this value is not refreshed until
 		// the device is power-cycled.
 
-		softwareID, _ := gomagtek.GetDeviceSoftwareID(device, bufSize)
+		softwareID, err := magtek.GetSoftwareID()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := gomagtek.GetDeviceSerialNumber(device, bufSize)
+		serialNum, err := magtek.GetSerialNumber()
 
 		// Host name as reported by the operating system.
 
-		hostName, _ := os.Hostname()
+		hostName, err := os.Hostname()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -74,13 +69,13 @@ func main() {
 
 			//TODO Phone Home routine to get serial number
 			serialNum = "24FA12C"
-			err = gomagtek.SetDeviceSerialNumber(device, bufSize, serialNum)
+			err = magtek.SetSerialNumber(serialNum)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, err = gomagtek.GetDeviceSerialNumber(device, bufSize)
+			serialNum, err = magtek.GetSerialNumber()
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue

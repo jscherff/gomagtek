@@ -78,7 +78,7 @@ func main() {
 
 		fmt.Println("Copying serial number...")
 
-		err = magtek.CopyDevSerialNumber(7)
+		err = magtek.CopyDevSerialNumber(gomagtek.DefaultSerialNumLength)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue

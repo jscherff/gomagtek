@@ -45,6 +45,8 @@ const (
 	PropertyUsbSerialNum uint8 = 0x01
 	PropertyDevSerialNum uint8 = 0x03
 	PropertyMagnesafeVersion uint8 = 0x04
+
+	DefaultSerialNumLength int = 7
 )
 
 var (

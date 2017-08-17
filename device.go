@@ -266,7 +266,7 @@ func (d *Device) getDeviceDescriptor() (err error) {
  */
 func (d *Device) getConfigDescriptor() (err error) {
 
-	data = make([]byte, BufferSizeConfigDescriptor)
+	data := make([]byte, BufferSizeConfigDescriptor)
 
 	_, err = d.Control(
 		RequestTypeStandardDeviceIn,

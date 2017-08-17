@@ -1,9 +1,46 @@
 package gomagtek
 
-import "path/filepath"
-import "runtime"
+import "github.com/google/gousb"
 import "math"
 import "fmt"
+
+// ============================================================================
+// Device Object.
+// ============================================================================
+
+/*
+ * The gomagtek Device struct represents a USB device. The Device struct
+ * Desc field contains all information about the device from gousb.Device.
+ * The gomagtek Device extends the gousb Device by adding the raw device
+ * descriptor, the config descriptor of the active config, and the size
+ * of the data buffer required by the device for vendor commands sent via
+ * control transfer.
+ */
+type Device struct {
+	*gousb.Device
+	DeviceDescriptor *DeviceDescriptor
+	ConfigDescriptor *ConfigDescriptor
+	BufferSize int
+}
+
+/*
+ * Construct a new gomagtek Device from a gousb Device.
+ */
+func NewDevice(d *gousb.Device) (*Device, error) {
+
+	var err error
+	nd := &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
+
+	err = nd.getDeviceDescriptor()
+	err = nd.getConfigDescriptor()
+	err = nd.findBufferSize()
+
+	if err != nil {
+		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+	}
+
+	return nd, err
+}
 
 // ============================================================================
 // Public Methods.

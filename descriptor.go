@@ -3,6 +3,10 @@ package gomagtek
 import "github.com/google/gousb"
 import "fmt"
 
+// ============================================================================
+// DeviceDescriptor Type.
+// ============================================================================
+
 /*
  * The gomagtek DeviceDescriptor specifies some basic information about
  * the USB device, such as the supported USB version, maximum packet size,
@@ -65,6 +69,10 @@ func NewDeviceDescriptor(d *gousb.Device) (ndd *DeviceDescriptor, err error) {
 
 	return ndd, err
 }
+
+// ============================================================================
+// ConfigDescriptor Type.
+// ============================================================================
 
 /*
  * The gomagtek ConfigDescriptor represents the active configuration of

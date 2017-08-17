@@ -26,10 +26,9 @@ type Device struct {
 /*
  * Construct a new gomagtek Device from a gousb Device.
  */
-func NewDevice(d *gousb.Device) (*Device, error) {
+func NewDevice(d *gousb.Device) (nd *Device, err error) {
 
-	var err error
-	nd := &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
+	nd = &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
 
 	err = nd.getDeviceDescriptor()
 	err = nd.getConfigDescriptor()

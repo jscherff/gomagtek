@@ -60,6 +60,13 @@ func (d *Device) GetProductID() (string) {
 }
 
 /*
+ * Get the size of the device data buffer for vendor commands.
+ */
+func (d *Device) GetBufferSize() (int) {
+	return d.BufferSize
+}
+
+/*
  * Get the software ID from device NVRAM using vendor control transfer.
  */
 func (d *Device) GetSoftwareID() (string, error) {
@@ -76,29 +83,29 @@ func (d *Device) GetMagnesafeVersion() (string, error) {
 /*
  * Get the USB serial number from device NVRAM using vendor control transfer.
  */
-func (d *Device) GetUsbSerialNumber() (string, error) {
-	return d.getProperty(PropertyUsbSerialNum)
+func (d *Device) GetSerialNum() (string, error) {
+	return d.getProperty(PropertySerialNum)
 }
 
 /*
  * Set the USB serial number in device NVRAM using vendor control transfer.
  */
-func (d *Device) SetUsbSerialNumber(prop string) (error) {
-	return d.setProperty(PropertyUsbSerialNum, prop)
+func (d *Device) SetSerialNum(prop string) (error) {
+	return d.setProperty(PropertySerialNum, prop)
 }
 
 /*
  * Erase the USB serial number from device NVRAM using vendor control transfer.
  */
-func (d *Device) EraseUsbSerialNumber() (error) {
-	return d.setProperty(PropertyUsbSerialNum, "")
+func (d *Device) EraseSerialNum() (error) {
+	return d.setProperty(PropertySerialNum, "")
 }
 
 /*
  * Get the device serial number from device NVRAM using vendor control transfer.
  */
-func (d *Device) GetDevSerialNumber() (string, error) {
-	return d.getProperty(PropertyDevSerialNum)
+func (d *Device) GetFactorySerialNum() (string, error) {
+	return d.getProperty(PropertyFactorySerialNum)
 }
 
 /*
@@ -106,8 +113,8 @@ func (d *Device) GetDevSerialNumber() (string, error) {
  * On Dynamag devices, this command will fail with result code 07 if the serial
  * number has already been configured.
  */
-func (d *Device) SetDevSerialNumber(prop string) (error) {
-	return d.setProperty(PropertyDevSerialNum, prop)
+func (d *Device) SetFactorySerialNum(prop string) (error) {
+	return d.setProperty(PropertyFactorySerialNum, prop)
 }
 
 /*
@@ -115,21 +122,21 @@ func (d *Device) SetDevSerialNumber(prop string) (error) {
  * On Dynamag devices, this command will fail with result code 07 if the serial
  * number has already been configured.
  */
-func (d *Device) EraseDevSerialNumber() (error) {
-	return d.setProperty(PropertyDevSerialNum, "")
+func (d *Device) EraseFactorySerialNum() (error) {
+	return d.setProperty(PropertyFactorySerialNum, "")
 }
 
 /*
  * Copy 'length' characters from the device serial number to the USB serial
  * number in device NVRAM using vendor control transfer.
  */
-func (d *Device) CopyDevSerialNumber(length int) (error) {
+func (d *Device) CopyFactorySerialNum(length int) (error) {
 
-	ds, err := d.GetDevSerialNumber()
+	ds, err := d.GetFactorySerialNum()
 
 	if err == nil {
 		limit := int(math.Min(float64(length), float64(len(ds))))
-		err = d.SetUsbSerialNumber(ds[:limit])
+		err = d.SetSerialNum(ds[:limit])
 	}
 
 	if err != nil {
@@ -142,10 +149,7 @@ func (d *Device) CopyDevSerialNumber(length int) (error) {
 /*
  * Get the manufacturer name of the device from the device descriptor.
  */
-func (d *Device) GetManufacturerName() (string, error) {
-
-	var prop string
-	var err error
+func (d *Device) GetManufacturerName() (prop string, err error) {
 
 	if d.DeviceDescriptor.ManufacturerIndex > 0 {
 		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.ManufacturerIndex))
@@ -161,10 +165,7 @@ func (d *Device) GetManufacturerName() (string, error) {
 /*
  * Get the product name of the device from the device descriptor.
  */
-func (d *Device) GetProductName() (string, error) {
-
-	var prop string
-	var err error
+func (d *Device) GetProductName() (prop string, err error) {
 
 	if d.DeviceDescriptor.ProductIndex > 0 {
 		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.ProductIndex))
@@ -183,13 +184,10 @@ func (d *Device) GetProductName() (string, error) {
  * in the device descriptor until the device is power-cycled (unplugged). The 
  * most current information is always stored on the device.
  */
-func (d *Device) GetUsbSerialNumberDesc() (string, error) {
+func (d *Device) GetDescriptorSerialNum() (prop string, err error) {
 
-	var prop string
-	var err error
-
-	if d.DeviceDescriptor.SerialNumberIndex > 0 {
-		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.SerialNumberIndex))
+	if d.DeviceDescriptor.SerialNumIndex > 0 {
+		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.SerialNumIndex))
 	}
 
 	if err != nil {
@@ -202,12 +200,12 @@ func (d *Device) GetUsbSerialNumberDesc() (string, error) {
 /*
  * Reset the device using vendor commands in control transfer.
  */
-func (d *Device) VendorReset() (int, error) {
+func (d *Device) VendorReset() (rc int, err error) {
 
 	data := make([]byte, d.BufferSize)
 	data[0] = 0x02
 
-	rc, err := d.Control(
+	rc, err = d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
@@ -228,11 +226,11 @@ func (d *Device) VendorReset() (int, error) {
 /*
  * Get the device descriptor of the device.
  */
-func (d *Device) getDeviceDescriptor() (error) {
+func (d *Device) getDeviceDescriptor() (err error) {
 
 	data := make([]byte, BufferSizeDeviceDescriptor)
 
-	_, err := d.Control(
+	_, err = d.Control(
 		RequestTypeStandardDeviceIn,
 		RequestGetDescriptor,
 		TypeDeviceDescriptor,
@@ -266,11 +264,11 @@ func (d *Device) getDeviceDescriptor() (error) {
 /*
  * Get the config descriptor of the device.
  */
-func (d *Device) getConfigDescriptor() (error) {
+func (d *Device) getConfigDescriptor() (err error) {
 
-	data := make([]byte, BufferSizeConfigDescriptor)
+	data = make([]byte, BufferSizeConfigDescriptor)
 
-	_, err := d.Control(
+	_, err = d.Control(
 		RequestTypeStandardDeviceIn,
 		RequestGetDescriptor,
 		TypeConfigDescriptor,
@@ -300,10 +298,9 @@ func (d *Device) getConfigDescriptor() (error) {
  * Failure to use the correct size for control transfers carrying
  * vendor commands will result in a LIBUSB_ERROR_PIPE error.
  */
-func (d *Device) findBufferSize() (error) {
+func (d *Device) findBufferSize() (err error) {
 
 	var rc, size int
-	var err error
 
 	for _, size = range vendorBufferSizes {
 
@@ -326,14 +323,12 @@ func (d *Device) findBufferSize() (error) {
 /*
  * Get a property from the device NVRAM using vendor commands in control transfer.
  */
-func (d *Device) getProperty(id uint8) (string, error) {
-
-	var prop string
+func (d *Device) getProperty(id uint8) (prop string, err error) {
 
 	data := make([]byte, d.BufferSize)
 	copy(data[0:], []byte{CommandGetProperty, 0x01, id})
 
-	_, err := d.Control(
+	_, err = d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
@@ -372,7 +367,7 @@ func (d *Device) getProperty(id uint8) (string, error) {
 /*
  * Set a property on the device NVRAM using vendor commands in control transfer.
  */
-func (d *Device) setProperty(id uint8, prop string) (error) {
+func (d *Device) setProperty(id uint8, prop string) (err error) {
 
 	if len(prop) > d.BufferSize - 3 {
 		return fmt.Errorf("%s: property length > data buffer", getFunctionInfo())
@@ -382,7 +377,7 @@ func (d *Device) setProperty(id uint8, prop string) (error) {
 	copy(data[0:], []byte{CommandSetProperty, uint8(len(prop)+1), id})
 	copy(data[3:], prop)
 
-	_, err := d.Control(
+	_, err = d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,

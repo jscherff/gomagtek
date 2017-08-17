@@ -23,17 +23,16 @@ type DeviceDescriptor struct {
 	DeviceReleaseNumber uint16	// BCD of Device Release Number
 	ManufacturerIndex uint8		// Index Manufacturer String Descriptor
 	ProductIndex uint8		// Index of Product String Descriptor
-	SerialNumberIndex uint8		// Index of Serial Number String Descriptor
+	SerialNumIndex uint8		// Index of Serial Number String Descriptor
 	NumConfigurations uint8		// Number of Possible Configurations
 }
 
 /*
  * Construct a new gomagtek DeviceDescriptor from a gousb Device.
  */
-func NewDeviceDescriptor(d *gousb.Device) (*DeviceDescriptor, error) {
+func NewDeviceDescriptor(d *gousb.Device) (ndd *DeviceDescriptor, err error) {
 
-	var err error
-	ndd := new(DeviceDescriptor)
+	ndd = new(DeviceDescriptor)
 	data := make([]byte, BufferSizeDeviceDescriptor)
 
 	_, err = d.Control(
@@ -86,10 +85,9 @@ type ConfigDescriptor struct {
 /*
  * Construct a new gomagtek ConfigDescriptor from a gousb Device.
  */
-func NewConfigDescriptor(d *gousb.Device) (*ConfigDescriptor, error) {
+func NewConfigDescriptor(d *gousb.Device) (ncd *ConfigDescriptor, err error) {
 
-	var err error
-	ncd := new(ConfigDescriptor)
+	ncd = new(ConfigDescriptor)
 	data := make([]byte, BufferSizeConfigDescriptor)
 
 	_, err = d.Control(

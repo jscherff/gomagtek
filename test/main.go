@@ -38,7 +38,7 @@ func main() {
 		fmt.Printf("MagneSafe Version: %s\n", magnesafeVersion)
 
 
-		devSerialNum, err:= magtek.GetDevSerialNumber()
+		factorySerialNum, err:= magtek.GetFactorySerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -47,18 +47,18 @@ func main() {
 		fmt.Printf("Device Serial Number: %s\n", devSerialNum)
 
 
-		usbSerialNum, err:= magtek.GetUsbSerialNumber()
+		serialNum, err:= magtek.GetSerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
+		fmt.Printf("USB Serial Number: %s\n", serialNum)
 
 
 		fmt.Println("Erasing serial number...")
 
-		err = magtek.EraseUsbSerialNumber()
+		err = magtek.EraseSerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -67,18 +67,18 @@ func main() {
 
 		fmt.Println("Checking serial number...")
 
-		usbSerialNum, err = magtek.GetUsbSerialNumber()
+		serialNum, err = magtek.GetSerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
+		fmt.Printf("USB Serial Number: %s\n", serialNum)
 
 
 		fmt.Println("Copying serial number...")
 
-		err = magtek.CopyDevSerialNumber(gomagtek.DefaultSerialNumLength)
+		err = magtek.CopyFactorySerialNum(gomagtek.DefaultSerialNumLength)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -87,12 +87,12 @@ func main() {
 
 		fmt.Println("Checking serial number...")
 
-		usbSerialNum, err = magtek.GetUsbSerialNumber()
+		serialNum, err = magtek.GetSerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("USB Serial Number: %s\n", usbSerialNum)
+		fmt.Printf("USB Serial Number: %s\n", serialNum)
 	}
 }

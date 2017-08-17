@@ -1,0 +1,13 @@
+vendor_id
+product_id
+software_id
+dev_serial_num
+usb_serial_num
+clear_serial_num
+devserialnumber
+erasedevserialnumber
+copydevserialnumber
+vendor_name
+product_name
+usbserialnumberdesc
+vendor_reset

@@ -2,14 +2,15 @@ package gomagtek
 
 const (
 	MagtekVendorID uint16 = 0x0801
+
 	SureswipeKbPID uint16 = 0x0001
 	SureswipeHidPID uint16 = 0x0002
 
-	DynamagSwipeKbPID uint16 = 0x0001
-	DynamagInsertKbPID uint16 = 0x0001
-	DynamagSwipeHidPID uint16 = 0x0011
-	DynamagInsertHidPID uint16 = 0x0013
-	DynamagWirelessHidPID uint16 = 0x0014
+	MagnesafeSwipeKbPID uint16 = 0x0001
+	MagnesafeInsertKbPID uint16 = 0x0001
+	MagnesafeSwipeHidPID uint16 = 0x0011
+	MagnesafeInsertHidPID uint16 = 0x0013
+	MagnesafeWirelessHidPID uint16 = 0x0014
 
 	RequestTypeVendorDeviceOut uint8 = 0x21
 	RequestTypeVendorDeviceIn uint8 = 0xA1
@@ -31,20 +32,20 @@ const (
 	BufferSizeDeviceDescriptor int = 18
 	BufferSizeConfigDescriptor int = 9
 	BufferSizeSureswipe int = 24
-	BufferSizeDynamag int = 60
+	BufferSizeMagnesafe int = 60
 
-	CommandGetProperty uint8 = 0x00
-	CommandSetProperty uint8 = 0x01
+	CommandGetProp uint8 = 0x00
+	CommandSetProp uint8 = 0x01
 	CommandResetDevice uint8 = 0x02
 
 	ResultCodeSuccess uint8 = 0x00
 	ResultCodeFailure uint8 = 0x01
 	ResultCodeBadParam uint8 = 0x02
 
-	PropertySoftwareID uint8 = 0x00
-	PropertySerialNum uint8 = 0x01
-	PropertyFactorySerialNum uint8 = 0x03
-	PropertyMagnesafeVersion uint8 = 0x04
+	PropSoftwareID uint8 = 0x00
+	PropSerialNum uint8 = 0x01
+	PropFactorySerialNum uint8 = 0x03
+	PropMagnesafeVer uint8 = 0x04
 
 	DefaultSerialNumLength int = 7
 )

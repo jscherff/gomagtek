@@ -57,39 +57,39 @@ func (d *Device) GetBufferSize() (int) {
 
 // GetSoftwareID retrieves the software ID from the device NVRAM.
 func (d *Device) GetSoftwareID() (string, error) {
-	return d.getProperty(PropertySoftwareID)
+	return d.getProperty(PropSoftwareID)
 }
 
 // GetMagnesafeVersion retrieves the MagneSafe version from device NVRAM.
-func (d *Device) GetMagnesafeVersion() (string, error) {
-	return d.getProperty(PropertyMagnesafeVersion)
+func (d *Device) GetMagnesafeVer() (string, error) {
+	return d.getProperty(PropMagnesafeVer)
 }
 
 // GetSerialNum retrieves the configurable serial number from device NVRAM.
 func (d *Device) GetSerialNum() (string, error) {
-	return d.getProperty(PropertySerialNum)
+	return d.getProperty(PropSerialNum)
 }
 
 // SetSerialNum sets the configurable serial number in device NVRAM.
 func (d *Device) SetSerialNum(prop string) (error) {
-	return d.setProperty(PropertySerialNum, prop)
+	return d.setProperty(PropSerialNum, prop)
 }
 
 // EraseSerialNum removes the configurable serial number from device NVRAM.
 func (d *Device) EraseSerialNum() (error) {
-	return d.setProperty(PropertySerialNum, "")
+	return d.setProperty(PropSerialNum, "")
 }
 
 // GetFactorySerialNum retrieves the factory serial number from device NVRAM.
 func (d *Device) GetFactorySerialNum() (string, error) {
-	return d.getProperty(PropertyFactorySerialNum)
+	return d.getProperty(PropFactorySerialNum)
 }
 
 // SetFactorySerialNum sets the factory serial number in device NVRAM. This
 // command will fail with result code 07 if the serial number has already been
 // configured.
 func (d *Device) SetFactorySerialNum(prop string) (error) {
-	return d.setProperty(PropertyFactorySerialNum, prop)
+	return d.setProperty(PropFactorySerialNum, prop)
 }
 
 // CopyFactorySerialNum copies 'length' characters from the factory serial
@@ -110,8 +110,8 @@ func (d *Device) CopyFactorySerialNum(length int) (error) {
 	return err
 }
 
-// GetManufacturerName retrieves the manufacturer name from device descriptor.
-func (d *Device) GetManufacturerName() (prop string, err error) {
+// GetVendorName retrieves the manufacturer name from device descriptor.
+func (d *Device) GetVendorName() (prop string, err error) {
 
 	if d.DeviceDescriptor.ManufacturerIndex > 0 {
 		prop, err = d.GetStringDescriptor(int(d.DeviceDescriptor.ManufacturerIndex))
@@ -272,7 +272,7 @@ func (d *Device) findBufferSize() (err error) {
 func (d *Device) getProperty(id uint8) (prop string, err error) {
 
 	data := make([]byte, d.BufferSize)
-	copy(data[0:], []byte{CommandGetProperty, 0x01, id})
+	copy(data[0:], []byte{CommandGetProp, 0x01, id})
 
 	_, err = d.Control(
 		RequestTypeVendorDeviceOut,
@@ -318,7 +318,7 @@ func (d *Device) setProperty(id uint8, prop string) (err error) {
 	}
 
 	data := make([]byte, d.BufferSize)
-	copy(data[0:], []byte{CommandSetProperty, uint8(len(prop)+1), id})
+	copy(data[0:], []byte{CommandSetProp, uint8(len(prop)+1), id})
 	copy(data[3:], prop)
 
 	_, err = d.Control(

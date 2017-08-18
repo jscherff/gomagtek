@@ -45,7 +45,7 @@ const (
 	PropSoftwareID uint8 = 0x00
 	PropSerialNum uint8 = 0x01
 	PropFactorySerialNum uint8 = 0x03
-	PropMagnesafeVer uint8 = 0x04
+	PropProductVer uint8 = 0x04
 
 	DefaultSerialNumLength int = 7
 )

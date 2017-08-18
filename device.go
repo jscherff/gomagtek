@@ -60,9 +60,9 @@ func (d *Device) GetSoftwareID() (string, error) {
 	return d.getProperty(PropSoftwareID)
 }
 
-// GetMagnesafeVersion retrieves the MagneSafe version from device NVRAM.
-func (d *Device) GetMagnesafeVer() (string, error) {
-	return d.getProperty(PropMagnesafeVer)
+// GetProductVer retrieves the MagneSafe version from device NVRAM.
+func (d *Device) GetProductVer() (string, error) {
+	return d.getProperty(PropProductVer)
 }
 
 // GetSerialNum retrieves the configurable serial number from device NVRAM.
@@ -156,13 +156,19 @@ func (d *Device) GetDescriptorSerialNum() (prop string, err error) {
 	return prop, err
 }
 
-// VendorReset reset the device using low-level vendor commands.
-func (d *Device) VendorReset() (rc int, err error) {
+// UsbReset performs a USB port reset to reinitialize the device.
+func (d *Device) UsbReset() (err error) {
+	return d.Reset()
+}
+
+
+// DeviceReset resets the device using low-level vendor commands.
+func (d *Device) DeviceReset() (err error) {
 
 	data := make([]byte, d.BufferSize)
-	data[0] = 0x02
+	data[0] = CommandResetDevice
 
-	rc, err = d.Control(
+	rc, err := d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
@@ -170,10 +176,10 @@ func (d *Device) VendorReset() (rc int, err error) {
 		data)
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		err = fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
-	return rc, err
+	return err
 }
 
 // getDeviceDescriptor retrieves the raw device descriptor.
@@ -181,7 +187,7 @@ func (d *Device) getDeviceDescriptor() (err error) {
 
 	data := make([]byte, BufferSizeDeviceDescriptor)
 
-	_, err = d.Control(
+	rc, err := d.Control(
 		RequestTypeStandardDeviceIn,
 		RequestGetDescriptor,
 		TypeDeviceDescriptor,
@@ -206,7 +212,7 @@ func (d *Device) getDeviceDescriptor() (err error) {
 			data[16],
 			data[17]}
 	} else {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		err = fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	return err
@@ -217,7 +223,7 @@ func (d *Device) getConfigDescriptor() (err error) {
 
 	data := make([]byte, BufferSizeConfigDescriptor)
 
-	_, err = d.Control(
+	rc, err := d.Control(
 		RequestTypeStandardDeviceIn,
 		RequestGetDescriptor,
 		TypeConfigDescriptor,
@@ -236,7 +242,7 @@ func (d *Device) getConfigDescriptor() (err error) {
 			data[7],
 			data[8]}
 	} else {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	return err
@@ -274,7 +280,7 @@ func (d *Device) getProperty(id uint8) (prop string, err error) {
 	data := make([]byte, d.BufferSize)
 	copy(data[0:], []byte{CommandGetProp, 0x01, id})
 
-	_, err = d.Control(
+	rc, err := d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
@@ -282,12 +288,12 @@ func (d *Device) getProperty(id uint8) (prop string, err error) {
 		data)
 
 	if err != nil {
-		return prop, fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return prop, fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	data = make([]byte, d.BufferSize)
 
-	_, err = d.Control(
+	rc, err = d.Control(
 		RequestTypeVendorDeviceIn,
 		RequestGetReport,
 		TypeFeatureReport,
@@ -295,7 +301,7 @@ func (d *Device) getProperty(id uint8) (prop string, err error) {
 		data)
 
 	if err != nil {
-		return prop, fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return prop, fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	if data[0] > 0x00 {
@@ -321,7 +327,7 @@ func (d *Device) setProperty(id uint8, prop string) (err error) {
 	copy(data[0:], []byte{CommandSetProp, uint8(len(prop)+1), id})
 	copy(data[3:], prop)
 
-	_, err = d.Control(
+	rc, err := d.Control(
 		RequestTypeVendorDeviceOut,
 		RequestSetReport,
 		TypeFeatureReport,
@@ -329,12 +335,12 @@ func (d *Device) setProperty(id uint8, prop string) (err error) {
 		data)
 
 	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	data = make([]byte, d.BufferSize)
 
-	_, err = d.Control(
+	rc, err = d.Control(
 		RequestTypeVendorDeviceIn,
 		RequestGetReport,
 		TypeFeatureReport,
@@ -342,7 +348,7 @@ func (d *Device) setProperty(id uint8, prop string) (err error) {
 		data)
 
 	if err != nil {
-		return fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return fmt.Errorf("%s: %v (%d)", getFunctionInfo(), err, rc)
 	}
 
 	if data[0] > 0x00 {

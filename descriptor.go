@@ -3,17 +3,9 @@ package gomagtek
 import "github.com/google/gousb"
 import "fmt"
 
-// ============================================================================
-// DeviceDescriptor Type.
-// ============================================================================
-
-/*
- * The gomagtek DeviceDescriptor specifies some basic information about
- * the USB device, such as the supported USB version, maximum packet size,
- * vendor and product IDs and the number of possible configurations the
- * device can have. This differs from the descriptor provided by gousb in
- * that it includes all the fields in raw format.
- */
+// DeviceDescriptor specifies some basic information about the USB device,
+// such as the supported USB version, maximum packet size, vendor and product
+// IDs.
 type DeviceDescriptor struct {
 	Length uint8			// Size of the Descriptor in Bytes
 	DescriptorType uint8		// Device Descriptor Type (0x01)
@@ -31,9 +23,7 @@ type DeviceDescriptor struct {
 	NumConfigurations uint8		// Number of Possible Configurations
 }
 
-/*
- * Construct a new gomagtek DeviceDescriptor from a gousb Device.
- */
+// NewDeviceDescriptor constructs a new DeviceDescriptor.
 func NewDeviceDescriptor(d *gousb.Device) (ndd *DeviceDescriptor, err error) {
 
 	ndd = new(DeviceDescriptor)
@@ -70,15 +60,8 @@ func NewDeviceDescriptor(d *gousb.Device) (ndd *DeviceDescriptor, err error) {
 	return ndd, err
 }
 
-// ============================================================================
-// ConfigDescriptor Type.
-// ============================================================================
-
-/*
- * The gomagtek ConfigDescriptor represents the active configuration of
- * the USB device. A device can have several different configurations,
- * though most have only one.
- */
+// ConfigDescriptor represents the active configuration of the USB device.
+// A device can have several configurations, though most have only one.
 type ConfigDescriptor struct {
 	Length uint8			// Size of Descriptor in Bytes
 	DescriptorType uint8		// Configuration Descriptor Type (0x02)
@@ -90,9 +73,7 @@ type ConfigDescriptor struct {
 	MaxPower uint8			// Maximum Power Consumption in 2mA units
 }
 
-/*
- * Construct a new gomagtek ConfigDescriptor from a gousb Device.
- */
+// NewConfigDescriptor constructs a new ConfigDescriptor.
 func NewConfigDescriptor(d *gousb.Device) (ncd *ConfigDescriptor, err error) {
 
 	ncd = new(ConfigDescriptor)

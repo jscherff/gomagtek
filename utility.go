@@ -4,13 +4,8 @@ import "path/filepath"
 import "runtime"
 import "fmt"
 
-// ============================================================================
-// Utility Functions.
-// ============================================================================
-
-/*
- * Get function filename, line number, and function name for error reporting.
- */
+// getFunctionInfo returns function filename, line number, and function name
+// for error reporting.
 func getFunctionInfo() string {
 
 	pc, file, line, success := runtime.Caller(1)

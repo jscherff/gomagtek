@@ -1,0 +1,68 @@
+package gomagtek
+
+import "github.com/google/gousb"
+//import "fmt"
+
+// ============================================================================
+// Context Type.
+// ============================================================================
+
+/*
+ * Context manages all resources related to USB device handling.
+ */
+type Context struct {
+	*gousb.Context
+}
+
+func NewContext() *Context {
+	//c := gousb.NewContext()
+	//return &Context{c}
+	return &Context{gousb.NewContext()}
+}
+
+/*
+func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, error) {
+	devs, err := c.Context.OpenDevices(opener)
+	return devs, err
+}
+*/
+
+func (c *Context) OpenDevicesWithVID(id uint16) (devs []*Device, err error) {
+
+	gc := &gousb.Context{c}
+
+	opener := func (desc *gousb.DeviceDesc) bool {
+		return uint16(desc.Vendor) == id
+	}
+
+	_, err := c.Context.OpenDevices(opener)
+
+	return devs, err
+}
+
+/*
+ * OpenDevicesWithVendorID returns a list of devices whose vendor ID
+ * matches the iargument.
+ */
+/*
+func (c *Context) OpenDevicesWithVendorID(id uint16) ([]*Device, error) {
+
+	opener := func (desc *gousb.DeviceDesc) bool {
+		return uint16(desc.Vendor) == id
+	}
+
+	//devs, err := c.Context.OpenDevices(opener)
+	devs, err := c.Context.OpenDevices(opener)
+
+	for _, d := range devs {
+		nd, _ := NewDevice(d)
+		_ = nd.getDeviceDescriptor()
+		_ = nd.findBufferSize()
+		d = nd
+	}
+
+	fmt.Println("GOT HERE")
+
+	return devs, err
+}
+*/

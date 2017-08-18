@@ -4,132 +4,96 @@ import "github.com/google/gousb"
 import "math"
 import "fmt"
 
-// ============================================================================
-// Device Type.
-// ============================================================================
-
-/*
- * The gomagtek Device struct represents a USB device. The Device struct
- * Desc field contains all information about the device from gousb.Device.
- * The gomagtek Device extends the gousb Device by adding the raw device
- * descriptor, the config descriptor of the active config, and the size
- * of the data buffer required by the device for vendor commands sent via
- * control transfer.
- */
+// Device represents a USB device. The Device struct Desc field contains
+// all information about the device. It includes the raw device descriptor,
+// the config descriptor of the active config, and the size of the data
+// buffer required by the device for vendor commands sent via control
+// transfer.
 type Device struct {
 	*gousb.Device
+	BufferSize int
 	DeviceDescriptor *DeviceDescriptor
 	ConfigDescriptor *ConfigDescriptor
-	BufferSize int
 }
 
-/*
- * Construct a new gomagtek Device from a gousb Device.
- */
+// NewDevice constructs a new Device.
 func NewDevice(d *gousb.Device) (nd *Device, err error) {
 
-	nd = &Device{d, new(DeviceDescriptor), new(ConfigDescriptor), 0}
+	nd = &Device{d, 0, new(DeviceDescriptor), new(ConfigDescriptor)}
 
-	err = nd.getDeviceDescriptor()
-	err = nd.getConfigDescriptor()
 	err = nd.findBufferSize()
 
 	if err != nil {
-		err = fmt.Errorf("%s: %v", getFunctionInfo(), err)
+		return nd, err
 	}
+
+	_ = nd.getDeviceDescriptor()
+	_ = nd.getConfigDescriptor()
 
 	return nd, err
 }
 
-// ============================================================================
-// Exported Methods.
-// ============================================================================
+// DeviceDesc is a partial representation of a USB device descriptor.
+type DeviceDesc struct {
+	*gousb.DeviceDesc
+}
 
-/*
- * Get the string representation of the vendor ID from the device descriptor.
- */
+// GetVendorId retrieves the string representation of the vendor ID from
+// the device descriptor.
 func (d *Device) GetVendorID() (string) {
 	return d.Desc.Vendor.String()
 }
 
-/*
- * Get the string representation of the product ID from the device descriptor.
- */
+// GetProductID retrieves the string representation of the product ID from
+// the device descriptor.
 func (d *Device) GetProductID() (string) {
 	return d.Desc.Product.String()
 }
 
-/*
- * Get the size of the device data buffer for vendor commands.
- */
+// GetBufferSize retrieves the size of the device data buffer.
 func (d *Device) GetBufferSize() (int) {
 	return d.BufferSize
 }
 
-/*
- * Get the software ID from device NVRAM using vendor control transfer.
- */
+// GetSoftwareID retrieves the software ID from the device NVRAM.
 func (d *Device) GetSoftwareID() (string, error) {
 	return d.getProperty(PropertySoftwareID)
 }
 
-/*
- * Get the MagneSafe version from device NVRAM using vendor control transfer.
- */
+// GetMagnesafeVersion retrieves the MagneSafe version from device NVRAM.
 func (d *Device) GetMagnesafeVersion() (string, error) {
 	return d.getProperty(PropertyMagnesafeVersion)
 }
 
-/*
- * Get the USB serial number from device NVRAM using vendor control transfer.
- */
+// GetSerialNum retrieves the configurable serial number from device NVRAM.
 func (d *Device) GetSerialNum() (string, error) {
 	return d.getProperty(PropertySerialNum)
 }
 
-/*
- * Set the USB serial number in device NVRAM using vendor control transfer.
- */
+// SetSerialNum sets the configurable serial number in device NVRAM.
 func (d *Device) SetSerialNum(prop string) (error) {
 	return d.setProperty(PropertySerialNum, prop)
 }
 
-/*
- * Erase the USB serial number from device NVRAM using vendor control transfer.
- */
+// EraseSerialNum removes the configurable serial number from device NVRAM.
 func (d *Device) EraseSerialNum() (error) {
 	return d.setProperty(PropertySerialNum, "")
 }
 
-/*
- * Get the device serial number from device NVRAM using vendor control transfer.
- */
+// GetFactorySerialNum retrieves the factory serial number from device NVRAM.
 func (d *Device) GetFactorySerialNum() (string, error) {
 	return d.getProperty(PropertyFactorySerialNum)
 }
 
-/*
- * Set the device serial number in device NVRAM using vendor control transfer.
- * On Dynamag devices, this command will fail with result code 07 if the serial
- * number has already been configured.
- */
+// SetFactorySerialNum sets the factory serial number in device NVRAM. This
+// command will fail with result code 07 if the serial number has already been
+// configured.
 func (d *Device) SetFactorySerialNum(prop string) (error) {
 	return d.setProperty(PropertyFactorySerialNum, prop)
 }
 
-/*
- * Erase the serial number from device NVRAM using vendor control transfer.
- * On Dynamag devices, this command will fail with result code 07 if the serial
- * number has already been configured.
- */
-func (d *Device) EraseFactorySerialNum() (error) {
-	return d.setProperty(PropertyFactorySerialNum, "")
-}
-
-/*
- * Copy 'length' characters from the device serial number to the USB serial
- * number in device NVRAM using vendor control transfer.
- */
+// CopyFactorySerialNum copies 'length' characters from the factory serial
+// number to the configurable serial number in device NVRAM.
 func (d *Device) CopyFactorySerialNum(length int) (error) {
 
 	ds, err := d.GetFactorySerialNum()
@@ -146,9 +110,7 @@ func (d *Device) CopyFactorySerialNum(length int) (error) {
 	return err
 }
 
-/*
- * Get the manufacturer name of the device from the device descriptor.
- */
+// GetManufacturerName retrieves the manufacturer name from device descriptor.
 func (d *Device) GetManufacturerName() (prop string, err error) {
 
 	if d.DeviceDescriptor.ManufacturerIndex > 0 {
@@ -162,9 +124,7 @@ func (d *Device) GetManufacturerName() (prop string, err error) {
 	return prop, err
 }
 
-/*
- * Get the product name of the device from the device descriptor.
- */
+// GetProductName retrieves the product name from device descriptor.
 func (d *Device) GetProductName() (prop string, err error) {
 
 	if d.DeviceDescriptor.ProductIndex > 0 {
@@ -178,12 +138,11 @@ func (d *Device) GetProductName() (prop string, err error) {
 	return prop, err
 }
 
-/*
- * Get the serial number of the device from the device descriptor. Changes made
- * to the serial number on the device using a control transfer are not reflected
- * in the device descriptor until the device is power-cycled (unplugged). The 
- * most current information is always stored on the device.
- */
+// GetDescriptorSerialNum retrieves the serial number of the device from the
+// device descriptor. Changes made to the serial number on the device using a
+// control transfer are not reflected in the device descriptor until the device
+// is power-cycled (unplugged). The most current information is always stored
+// on the device.
 func (d *Device) GetDescriptorSerialNum() (prop string, err error) {
 
 	if d.DeviceDescriptor.SerialNumIndex > 0 {
@@ -197,9 +156,7 @@ func (d *Device) GetDescriptorSerialNum() (prop string, err error) {
 	return prop, err
 }
 
-/*
- * Reset the device using vendor commands in control transfer.
- */
+// VendorReset reset the device using low-level vendor commands.
 func (d *Device) VendorReset() (rc int, err error) {
 
 	data := make([]byte, d.BufferSize)
@@ -219,13 +176,7 @@ func (d *Device) VendorReset() (rc int, err error) {
 	return rc, err
 }
 
-// ============================================================================
-// Un-exported Methods.
-// ============================================================================
-
-/*
- * Get the device descriptor of the device.
- */
+// getDeviceDescriptor retrieves the raw device descriptor.
 func (d *Device) getDeviceDescriptor() (err error) {
 
 	data := make([]byte, BufferSizeDeviceDescriptor)
@@ -261,9 +212,7 @@ func (d *Device) getDeviceDescriptor() (err error) {
 	return err
 }
 
-/*
- * Get the config descriptor of the device.
- */
+// getConfigDescriptor retrieves the raw active config descriptor.
 func (d *Device) getConfigDescriptor() (err error) {
 
 	data := make([]byte, BufferSizeConfigDescriptor)
@@ -293,11 +242,10 @@ func (d *Device) getConfigDescriptor() (err error) {
 	return err
 }
 
-/*
- * Use trial and error to find the control transfer data buffer size.
- * Failure to use the correct size for control transfers carrying
- * vendor commands will result in a LIBUSB_ERROR_PIPE error.
- */
+// findBufferSize uses trial and error to find the control transfer data
+// buffer size of the device. Failure to use the correct size for control
+// transfers carrying vendor commands will result in a LIBUSB_ERROR_PIPE
+// error.
 func (d *Device) findBufferSize() (err error) {
 
 	var rc, size int
@@ -320,9 +268,7 @@ func (d *Device) findBufferSize() (err error) {
 	return err
 }
 
-/*
- * Get a property from the device NVRAM using vendor commands in control transfer.
- */
+// getProperty retrieves a property from device NVRAM using low-level commands.
 func (d *Device) getProperty(id uint8) (prop string, err error) {
 
 	data := make([]byte, d.BufferSize)
@@ -364,9 +310,7 @@ func (d *Device) getProperty(id uint8) (prop string, err error) {
 	return prop, err
 }
 
-/*
- * Set a property on the device NVRAM using vendor commands in control transfer.
- */
+// setProperty configures a property in device NVRAM using low-level commands.
 func (d *Device) setProperty(id uint8, prop string) (err error) {
 
 	if len(prop) > d.BufferSize - 3 {

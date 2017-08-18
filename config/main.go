@@ -1,7 +1,7 @@
 package main
 
-import "github.com/google/gousb"
 import "github.com/jscherff/gomagtek"
+import "github.com/google/gousb"
 import "log"
 import "fmt"
 import "os"
@@ -20,7 +20,7 @@ func main() {
 	// on Windows systems.
 
 	devices, _ := context.OpenDevices(func(desc *gousb.DeviceDesc) bool {
-		return desc.Vendor == gousb.ID(gomagtek.MagtekVendorID)
+		return uint16(desc.Vendor) == gomagtek.MagtekVendorID
 	})
 
 	if len(devices) == 0 {
@@ -31,14 +31,14 @@ func main() {
 
 		defer device.Close()
 
-		magtek, err := gomagtek.NewDevice(device)
+		device, err := gomagtek.NewDevice(device)
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		vendorID := magtek.GetVendorID()
-		productID := magtek.GetProductID()
+		vendorID := device.GetVendorID()
+		productID := device.GetProductID()
 
 		// Information obtained from the device using control
 		// transfer. Serial number can also be obtained using
@@ -53,13 +53,13 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		softwareID, err := magtek.GetSoftwareID()
+		softwareID, err := device.GetSoftwareID()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := magtek.GetSerialNum()
+		serialNum, err := device.GetSerialNum()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -71,13 +71,13 @@ func main() {
 		if len(serialNum) == 0 {
 
 			serialNum = "24FA12C" //TODO: obtain from server
-			err = magtek.SetSerialNum(serialNum)
+			err = device.SetSerialNum(serialNum)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, err = magtek.GetSerialNum()
+			serialNum, err = device.GetSerialNum()
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue

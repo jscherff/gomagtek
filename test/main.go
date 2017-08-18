@@ -44,7 +44,7 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		fmt.Printf("Device Serial Number: %s\n", devSerialNum)
+		fmt.Printf("Device Serial Number: %s\n", factorySerialNum)
 
 
 		serialNum, err:= magtek.GetSerialNum()

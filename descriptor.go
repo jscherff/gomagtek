@@ -1,7 +1,9 @@
 package gomagtek
 
-import "github.com/google/gousb"
-import "fmt"
+import (
+	"github.com/google/gousb"
+	"fmt"
+)
 
 // DeviceDescriptor specifies some basic information about the USB device,
 // such as the supported USB version, maximum packet size, vendor and product

@@ -1,8 +1,10 @@
 package gomagtek
 
-import "path/filepath"
-import "runtime"
-import "fmt"
+import (
+	"path/filepath"
+	"runtime"
+	"fmt"
+)
 
 // getFunctionInfo returns function filename, line number, and function name
 // for error reporting.

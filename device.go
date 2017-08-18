@@ -1,8 +1,10 @@
 package gomagtek
 
-import "github.com/google/gousb"
-import "math"
-import "fmt"
+import (
+	"github.com/google/gousb"
+	"math"
+	"fmt"
+)
 
 // Device represents a USB device. The Device struct Desc field contains
 // all information about the device. It includes the raw device descriptor,

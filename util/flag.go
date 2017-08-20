@@ -19,42 +19,50 @@ var reportFields = map[string]string{
 	"factory_sn":	"Device Factory Serial Number",
 	"descrip_sn":	"Device Descriptor Serial Number"}
 
-var includeUsage = fmt.Sprintf("Include `<field list>` in report (comma-separated):" +
-	strings.Repeat("\n\t%q\t%s", 11),
-	"hostname",	"Host Name",
-	"vendor_id",	"Vendor ID",
-	"vendor_name",	"Vendor Name",
-	"product_id",	"Product ID",
-	"product_name",	"Product Name",
-	"product_ver",	"Product Version",
-	"software_id",	"Software ID",
-	"buffer_size",	"Buffer Size",
-	"device_sn",	"Device Serial Number",
-	"factory_sn",	"Device Factory Serial Number",
-	"descrip_sn",	"Device Descriptor Serial Number")
+var includeUsage = fmt.Sprintf("Include `<fields>` in report (comma-separated list):" + strings.Repeat("\n\t%q\t%s", 11),
+	"hn",	"Host Name",
+	"vid",	"Vendor ID",
+	"vn",	"Vendor Name",
+	"pid",	"Product ID",
+	"pn",	"Product Name",
+	"pv",	"Product Version",
+	"sid",	"Software ID",
+	"bs",	"Buffer Size",
+	"sn",	"Device Serial Number",
+	"fsn",	"Factory Serial Number",
+	"dsn",	"Descriptor Serial Number")
+
+var formatUsage = fmt.Sprintf("Write report output in `<format>` format:" + strings.Repeat("\n\t%q\t%s", 2),
+	"csv",	"Comma-separated values",
+	"nvp",	"Name-value pairs")
 
 var (
 	fsMode = flag.NewFlagSet("mode", flag.ExitOnError)
-	fReportMode = fsMode.Bool("report", false, "Report mode")
-	fConfigMode = fsMode.Bool("config", false, "Config mode")
+	fModeReport = fsMode.Bool("report", false, "Report mode")
+	fModeConfig = fsMode.Bool("config", false, "Config mode")
+	fModeReset = fsMode.Bool("reset", false, "Reset mode")
 )
 
 var (
-	fsReport = flag.NewFlagSet("report_fields", flag.ExitOnError)
-	fInclude = fsReport.String("include", "", includeUsage)
-	fFormatCSV = fsReport.Bool("format_csv", true, "Write output in CSV format")
-	fFormatNVP = fsReport.Bool("format_nvp", false, "Write output as name/value pairs")
-	fWriteScreen = fsReport.Bool("write_screen", false, "Write output to screen")
-	fWriteFile = fsReport.String ("write_file", "", "Write output to `<file>`")
+	fsReport = flag.NewFlagSet("report", flag.ExitOnError)
+	fReportInc = fsReport.String("include", "", includeUsage)
+	fReportFmt = fsReport.String("format", "", formatUsage)
+	fReportFile = fsReport.String ("file", "", "Write output to `<file>`")
+	fReportRaw = fsReport.Bool("raw", false, "Write output without headings")
+	fReportStdout = fsReport.Bool("stdout", false, "Write output to stdout")
 )
 
 var (
-	fsConfig = flag.NewFlagSet("config_options", flag.ExitOnError)
-	fEraseSN = fsConfig.Bool("erase_sn", false, "Erase device serial number")
-	fSetSnString = fsConfig.String("set_sn_string", "", "Set device serial number to `<string>`")
-	fSetSnFactory = fsConfig.Int("set_sn_factory", 7, "Set device serial number to `<n>` bytes of factory SN")
-	fSetSnServer = fsConfig.String("set_sn_server", "", "Set device serial number from server `<url>`")
-	fFetchIfSN = fsConfig.Bool("set_only_empty", true, "Set device serial number ONLY if empty")
-	fUsbReset = fsConfig.Bool("usb_reset", false, "Perform a USB reset")
-	fDevReset = fsConfig.Bool("dev_reset", false, "Perform a device reset")
+	fsConfig = flag.NewFlagSet("config", flag.ExitOnError)
+	fConfigErase = fsConfig.Bool("erase", false, "Erase serial number")
+	fConfigSet = fsConfig.String("set", "", "Set serial number to `<string>`")
+	fConfigUrl = fsConfig.String("url", "", "Set serial number from URL `<url>`")
+	fConfigCopy = fsConfig.Int("copy", 7, "Copy `<n>` characters of factory SN to device SN")
+	fConfigEmpty = fsConfig.Bool("empty", true, "Set serial number ONLY if it's empty")
+)
+
+var (
+	fsReset = flag.NewFlagSet("reset", flag.ExitOnError)
+	fResetUsb = fsReset.Bool("usb", false, "Perform a USB reset")
+	fResetDev = fsReset.Bool("dev", false, "Perform a device reset")
 )

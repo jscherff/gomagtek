@@ -22,10 +22,12 @@ func main() {
 	fsMode.Parse(os.Args[1:2])
 
 	switch {
-	case *fReportMode:
+	case *fModeReport:
 		fsReport.Parse(os.Args[2:])
-	case *fConfigMode:
+	case *fModeConfig:
 		fsConfig.Parse(os.Args[2:])
+	case *fModeReset:
+		fsReset.Parse(os.Args[2:])
 	}
 
 

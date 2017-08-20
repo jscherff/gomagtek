@@ -13,8 +13,10 @@ type ReportItem struct {
 type Report []ReportItem
 
 func report() {
+
 	fields := strings.Split(",", *fReportInc)
-	for field := range fields {
+
+	for _, field := range fields {
 
 		switch field {
 		case "hn":

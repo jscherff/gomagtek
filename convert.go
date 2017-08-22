@@ -2,32 +2,31 @@ package gomagtek
 
 import (
 	"encoding/json"
-	"fmt"
+	"encoding/xml"
 	"os"
 )
 
 type DeviceInfo struct {
-	HostName	string	`json:"host_name"`
-	VendorID	string	`json:"vendor_id"`
-	ProductID	string	`json:"product_id"`
-	VendorName	string	`json:"vendor_name"`
-	ProductName	string	`json:"product_name"`
-	ProductVer	string	`json:"product_ver"`
-	SoftwareID	string	`json:"software_id"`
-	DeviceSN	string	`json:"device_sn"`
-	FactorySN	string	`json:"factory_sn"`
-	DescriptSN	string	`json:"descript_sn"`
-	BusNumber	string	`json:"bus_number"`
-	BusAddress	string	`json:"bus_address"`
-	USBSpec		string	`json:"usb_spec"`
-	USBClass	string	`json:"usb_class"`
-	USBSubclass	string	`json:"usb_subclass"`
-	USBProtocol	string	`json:"usb_protocol"`
-	DeviceSpeed	string	`json:"device_speed"`
-	DeviceVer	string	`json:"device_ver"`
-	MaxPktSize	string	`json:"max_pkt_size"`
-	BufferSize	string	`json:"buffer_size"`
-	Errors		[]error	`json:"errors"`
+	HostName	string
+	VendorID	string
+	ProductID	string
+	VendorName	string
+	ProductName	string
+	ProductVer	string
+	SoftwareID	string
+	DeviceSN	string
+	FactorySN	string
+	DescriptSN	string
+	BusNumber	string
+	BusAddress	string
+	USBSpec		string
+	USBClass	string
+	USBSubclass	string
+	USBProtocol	string
+	DeviceSpeed	string
+	DeviceVer	string
+	MaxPktSize	string
+	BufferSize	string
 }
 
 var ImportMap = map[string]string {
@@ -82,10 +81,9 @@ var DefaultFields = []string {
 	"SoftwareID",
 	"DeviceSN"}
 
-func NewDeviceInfo(d* Device) (i *DeviceInfo, err error) {
+func NewDeviceInfo(d* Device) (i *DeviceInfo, errs []error) {
 
 	var e error
-	var errs []error
 
 	i = &DeviceInfo {
 		VendorID:	d.GetVendorID(),
@@ -100,30 +98,30 @@ func NewDeviceInfo(d* Device) (i *DeviceInfo, err error) {
 		DeviceVer:	d.GetDeviceVer(),
 		MaxPktSize:	d.GetMaxPktSize()}
 
-	i.HostName, e = os.Hostname(); errs = append(errs, e)
-	i.VendorName, e = d.GetVendorName(); errs = append(errs, e)
-	i.ProductName, e = d.GetProductName(); errs = append(errs, e)
-	i.ProductVer, e = d.GetProductVer(); errs = append(errs, e)
-	i.SoftwareID, e = d.GetSoftwareID(); errs = append(errs, e)
-	i.DeviceSN, e = d.GetDeviceSN(); errs = append(errs, e)
-	i.FactorySN, e = d.GetFactorySN(); errs = append(errs, e)
-	i.DescriptSN, e = d.GetDescriptSN(); errs = append(errs, e)
-	i.BufferSize, e = d.GetBufferSize(); errs = append(errs, e)
+	if i.HostName, e = os.Hostname(); e != nil {errs = append(errs, e)}
+	if i.VendorName, e = d.GetVendorName(); e != nil {errs = append(errs, e)}
+	if i.ProductName, e = d.GetProductName(); e != nil {errs = append(errs, e)}
+	if i.ProductVer, e = d.GetProductVer(); e != nil {errs = append(errs, e)}
+	if i.SoftwareID, e = d.GetSoftwareID(); e != nil {errs = append(errs, e)}
+	if i.DeviceSN, e = d.GetDeviceSN(); e != nil {errs = append(errs, e)}
+	if i.FactorySN, e = d.GetFactorySN(); e != nil {errs = append(errs, e)}
+	if i.DescriptSN, e = d.GetDescriptSN(); e != nil {errs = append(errs, e)}
+	if i.BufferSize, e = d.GetBufferSize(); e != nil {errs = append(errs, e)}
 
-	for _, e = range errs {
-		if e != nil {
-			i.Errors = append(i.Errors, e)
-		}
-	}
-
-	if len(i.Errors) > 0 {
-		err = fmt.Errorf("%s: errs recorded in object's Errors field", getFunctionInfo())
-	}
-
-	return i, err
+	return i, errs
 }
 
 func (i *DeviceInfo) JSON() (s string, err error) {
 	j, err := json.Marshal(i)
 	return string(j), err
+}
+
+func (i *DeviceInfo) XML() (s string, err error) {
+	x, err := xml.Marshal(i)
+	return string(x), err
+}
+
+func (i *DeviceInfo) FXML() (s string, err error) {
+	x, err := xml.MarshalIndent(i, "", "\t")
+	return string(x), err
 }

@@ -64,14 +64,16 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		di, err := gomagtek.NewDeviceInfo(device)
+		di, errs := gomagtek.NewDeviceInfo(device)
 
-		if err != nil {
-			log.Fatalf("Error: %v", err); continue
+		if len(errs) > 0 {
+			log.Fatalf("Errors encountered"); continue
 		}
 
 		fmt.Println(di)
 		fmt.Println(di.JSON())
+		fmt.Println(di.XML())
+		fmt.Println(di.FXML())
 		os.Exit(0)
 
 		switch {

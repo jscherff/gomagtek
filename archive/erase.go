@@ -47,7 +47,7 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := magtek.GetSerialNum()
+		serialNum, err := magtek.GetDeviceSN()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -56,13 +56,13 @@ func main() {
 		fmt.Printf("BEFORE\n" + printFormat, vendorID, productID,
 			softwareID, serialNum, hostName)
 
-		err = magtek.EraseSerialNum()
+		err = magtek.EraseDeviceSN()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err = magtek.GetSerialNum()
+		serialNum, err = magtek.GetDeviceSN()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue

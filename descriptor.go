@@ -15,7 +15,7 @@ type DeviceDescriptor struct {
 	DeviceClass uint8		// Device Class Code or Vendor Specified
 	DeviceSubClass uint8		// Subclass Code Assigned by USB Org
 	DeviceProtocol uint8		// Protocol Code Assigned by USB Org
-	MaxPacketSize uint8		// Maximum Packet Size for Zero Endpoint
+	MaxPktSize uint8		// Maximum Packet Size for Zero Endpoint
 	VendorID uint16			// Vendor ID Assigned by USB Org
 	ProductID uint16		// Product ID (Assigned by Manufacturer)
 	DeviceReleaseNumber uint16	// BCD of Device Release Number
@@ -32,7 +32,7 @@ func NewDeviceDescriptor(d *gousb.Device) (ndd *DeviceDescriptor, err error) {
 	data := make([]byte, BufferSizeDeviceDescriptor)
 
 	_, err = d.Control(
-		RequestTypeStandardDeviceIn,
+		RequestDirectionIn + RequestTypeStandard + RequestRecipientDevice,
 		RequestGetDescriptor,
 		TypeDeviceDescriptor,
 		InterfaceNumber,
@@ -82,7 +82,7 @@ func NewConfigDescriptor(d *gousb.Device) (ncd *ConfigDescriptor, err error) {
 	data := make([]byte, BufferSizeConfigDescriptor)
 
 	_, err = d.Control(
-		RequestTypeStandardDeviceIn,
+		RequestDirectionIn + RequestTypeStandard + RequestRecipientDevice,
 		RequestGetDescriptor,
 		TypeConfigDescriptor,
 		InterfaceNumber,

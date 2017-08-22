@@ -59,7 +59,7 @@ func main() {
 			log.Fatalf("Error: %v", err); continue
 		}
 
-		serialNum, err := device.GetSerialNum()
+		serialNum, err := device.GetDeviceSN()
 
 		if err != nil {
 			log.Fatalf("Error: %v", err); continue
@@ -71,13 +71,13 @@ func main() {
 		if len(serialNum) == 0 {
 
 			serialNum = "24FA12C" //TODO: obtain from server
-			err = device.SetSerialNum(serialNum)
+			err = device.SetDeviceSN(serialNum)
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue
 			}
 
-			serialNum, err = device.GetSerialNum()
+			serialNum, err = device.GetDeviceSN()
 
 			if err != nil {
 				log.Fatalf("Error: %v", err); continue

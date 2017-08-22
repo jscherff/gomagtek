@@ -12,11 +12,15 @@ const (
 	MagnesafeInsertHidPID uint16 = 0x0013
 	MagnesafeWirelessHidPID uint16 = 0x0014
 
-	RequestTypeVendorDeviceOut uint8 = 0x21
-	RequestTypeVendorDeviceIn uint8 = 0xA1
-	RequestTypeStandardDeviceOut uint8 = 0x00
-	RequestTypeStandardDeviceIn uint8 = 0x80
-	RequestTypeStandardInterfaceIn uint8 = 0x81
+	RequestDirectionOut uint8 = 0x00
+	RequestDirectionIn uint8 = 0x80
+	RequestTypeStandard uint8 = 0x00
+	RequestTypeClass uint8 = 0x20
+	RequestTypeVendor uint8 = 0x40
+	RequestRecipientDevice uint8 = 0x00
+	RequestRecipientInterface uint8 = 0x01
+	RequestRecipientEndpoint uint8 = 0x02
+	RequestRecipientOther uint8 = 0x03
 
 	RequestGetReport uint8 = 0x01
 	RequestSetReport uint8 = 0x09
@@ -43,11 +47,11 @@ const (
 	ResultCodeBadParam uint8 = 0x02
 
 	PropSoftwareID uint8 = 0x00
-	PropSerialNum uint8 = 0x01
-	PropFactorySerialNum uint8 = 0x03
+	PropDeviceSN uint8 = 0x01
+	PropFactorySN uint8 = 0x03
 	PropProductVer uint8 = 0x04
 
-	DefaultSerialNumLength int = 7
+	DefaultSNLength int = 7
 )
 
 var (

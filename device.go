@@ -104,7 +104,7 @@ func (d *Device) GetSoftwareID() (string, error) {
 // GetProductVer retrieves the MagneSafe version from device NVRAM.
 func (d *Device) GetProductVer() (value string, err error) {
 	value, err = d.getProperty(PropProductVer)
-	if len(value) <= 1 {value = "NA"}
+	if len(value) <= 1 {value = ""}
 	return value, err
 }
 
